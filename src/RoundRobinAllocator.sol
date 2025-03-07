@@ -5,6 +5,8 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
+import {Errors} from "./lib/Errors.sol";
+
 contract RoundRobinAllocator is
     UUPSUpgradeable,
     Ownable2StepUpgradeable,
@@ -19,5 +21,9 @@ contract RoundRobinAllocator is
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
         __Pausable_init();
+    }
+
+    function renounceOwnership() public view override onlyOwner {
+        revert Errors.OwnershipCannotBeRenounced();
     }
 }
