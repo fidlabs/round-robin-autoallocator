@@ -9,17 +9,31 @@ import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";
 import {DataCapTypes} from "filecoin-solidity/types/DataCapTypes.sol";
 import {CBORDecoder} from "filecoin-solidity/utils/CborDecode.sol";
 import {UtilsHandlers} from "filecoin-solidity/utils/UtilsHandlers.sol";
+import {DataCapAPI} from "filecoin-solidity/DataCapAPI.sol";
+import {BigInts} from "filecoin-solidity/utils/BigInts.sol";
+import {FilAddresses} from "filecoin-solidity/utils/FilAddresses.sol";
 
 import {Errors} from "./lib/Errors.sol";
+import {AllocationRequestData, AllocationCbor} from "./lib/AllocationCbor.sol";
+
+struct AllocationRequest {
+    bytes dataCID;
+    uint64 size;
+}
 
 contract RoundRobinAllocator is
     UUPSUpgradeable,
     Ownable2StepUpgradeable,
     PausableUpgradeable
 {
+    using AllocationCbor for AllocationRequestData[];
+    using AllocationCbor for bytes;
+
     uint32 constant _FRC46_TOKEN_TYPE = 2233613279;
     address private constant _DATACAP_ADDRESS =
         address(0xfF00000000000000000000000000000000000007);
+
+    event AllocationRequested(address indexed client, AllocationRequest[] allocReq, uint64[] allocationIds ,uint256 collateral);
 
     function _authorizeUpgrade(
         address newImplementation
@@ -35,6 +49,63 @@ contract RoundRobinAllocator is
     function renounceOwnership() public view override onlyOwner {
         revert Errors.OwnershipCannotBeRenounced();
     }
+
+    function allocate(
+        AllocationRequest[] calldata allocReq
+    ) public payable {
+        // TODO: find out how large MAX is possible
+        if (allocReq.length == 0) {
+            revert Errors.InvalidAllocationRequest();
+        }
+
+        uint64 provider = 1000;
+        int64 termMin = 518400;
+        int64 termMax = 5256000;
+        int64 expiration = 114363;
+
+        uint size = 0;
+        AllocationRequestData[]
+            memory allocationRequestData = new AllocationRequestData[](allocReq.length);
+        for (uint i = 0; i < allocReq.length; i++) {
+            size += allocReq[i].size;
+
+            allocationRequestData[i] = AllocationRequestData({
+                provider: provider,
+                dataCID: allocReq[i].dataCID,
+                size: allocReq[i].size,
+                termMin: termMin,
+                termMax: termMax,
+                expiration: expiration
+            });
+        }
+
+        uint amount = size * 10 ** 18;
+
+        DataCapTypes.TransferParams memory params = DataCapTypes
+            .TransferParams({
+                to: FilAddresses.fromActorID(6),
+                amount: BigInts.fromUint256(amount),
+                operator_data: allocationRequestData.encodeDataArray()
+            });
+        (
+            int256 exit_code,
+            DataCapTypes.TransferReturn memory result
+        ) = DataCapAPI.transfer(params);
+
+        emit DebugBytes(msg.sender, result.recipient_data);
+
+        uint64[] memory allocationIds = result.recipient_data.decodeAllocationResponse();
+
+        if (allocationIds.length != allocReq.length) {
+            revert Errors.AllocationFailed();
+        }
+
+        emit AllocationRequested(msg.sender, allocReq, allocationIds, 0);
+
+        if (exit_code != 0) {
+            revert Errors.DataCapTransferFailed();
+        }
+        }
 
     /**
      * @notice The handle_filecoin_method function is a universal entry point for calls

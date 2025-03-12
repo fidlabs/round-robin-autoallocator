@@ -18,8 +18,18 @@ library Errors {
     // 0x6a172882
     error UnsupportedToken();
 
-
     /// @dev Thrown if caller is invalid
     // 0x6a172882
     error InvalidCaller(address caller, address expectedCaller);
+
+    /// @dev Thrown if data cap transfer failed
+    // 0x728dfdbb
+    error DataCapTransferFailed();
+
+    /// @dev Thrown if allocation request is invalid
+    // 0x46ac3f35
+    error InvalidAllocationRequest();
+
+    // 0xc5271dad
+    error AllocationFailed();
 }
