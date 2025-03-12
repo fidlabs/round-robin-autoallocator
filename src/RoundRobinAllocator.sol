@@ -35,6 +35,9 @@ contract RoundRobinAllocator is
 
     event AllocationRequested(address indexed client, AllocationRequest[] allocReq, uint64[] allocationIds ,uint256 collateral);
 
+    // TODO: remove me b4 prod
+    event DebugBytes(address indexed client, bytes data);
+
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
