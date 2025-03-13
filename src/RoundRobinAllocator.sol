@@ -33,7 +33,7 @@ contract RoundRobinAllocator is
     address private constant _DATACAP_ADDRESS =
         address(0xfF00000000000000000000000000000000000007);
 
-    event AllocationRequested(address indexed client, AllocationRequest[] allocReq, uint64[] allocationIds ,uint256 collateral);
+    event AllocationsCreated(address indexed client, AllocationRequest[] allocReq, uint64[] allocationIds ,uint256 collateral);
 
     // TODO: remove me b4 prod
     event DebugBytes(address indexed client, bytes data);
@@ -56,7 +56,6 @@ contract RoundRobinAllocator is
     function allocate(
         AllocationRequest[] calldata allocReq
     ) public payable {
-        // TODO: find out how large MAX is possible
         if (allocReq.length == 0) {
             revert Errors.InvalidAllocationRequest();
         }
@@ -66,11 +65,11 @@ contract RoundRobinAllocator is
         int64 termMax = 5256000;
         int64 expiration = 114363;
 
-        uint size = 0;
+        uint totalSize = 0;
         AllocationRequestData[]
             memory allocationRequestData = new AllocationRequestData[](allocReq.length);
         for (uint i = 0; i < allocReq.length; i++) {
-            size += allocReq[i].size;
+            totalSize += allocReq[i].size;
 
             allocationRequestData[i] = AllocationRequestData({
                 provider: provider,
@@ -82,7 +81,7 @@ contract RoundRobinAllocator is
             });
         }
 
-        uint amount = size * 10 ** 18;
+        uint amount = totalSize * 10 ** 18;
 
         DataCapTypes.TransferParams memory params = DataCapTypes
             .TransferParams({
@@ -103,7 +102,7 @@ contract RoundRobinAllocator is
             revert Errors.AllocationFailed();
         }
 
-        emit AllocationRequested(msg.sender, allocReq, allocationIds, 0);
+        emit AllocationsCreated(msg.sender, allocReq, allocationIds, 0);
 
         if (exit_code != 0) {
             revert Errors.DataCapTransferFailed();
