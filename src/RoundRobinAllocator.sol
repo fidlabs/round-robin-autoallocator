@@ -14,7 +14,8 @@ import {BigInts} from "filecoin-solidity/utils/BigInts.sol";
 import {FilAddresses} from "filecoin-solidity/utils/FilAddresses.sol";
 
 import {Errors} from "./lib/Errors.sol";
-import {AllocationRequestData, AllocationCbor} from "./lib/AllocationCbor.sol";
+import {AllocationRequestCbor, AllocationRequestData} from "./lib/AllocationRequestCbor.sol";
+import {AllocationResponseCbor} from "./lib/AllocationResponseCbor.sol";
 
 struct AllocationRequest {
     bytes dataCID;
@@ -26,8 +27,8 @@ contract RoundRobinAllocator is
     Ownable2StepUpgradeable,
     PausableUpgradeable
 {
-    using AllocationCbor for AllocationRequestData[];
-    using AllocationCbor for bytes;
+    using AllocationRequestCbor for AllocationRequestData[];
+    using AllocationResponseCbor for DataCapTypes.TransferReturn;
 
     uint32 constant _FRC46_TOKEN_TYPE = 2233613279;
     address private constant _DATACAP_ADDRESS =
@@ -55,7 +56,7 @@ contract RoundRobinAllocator is
 
     function allocate(
         AllocationRequest[] calldata allocReq
-    ) public payable {
+    ) public payable returns (uint64[] memory allocationIds) {
         if (allocReq.length == 0) {
             revert Errors.InvalidAllocationRequest();
         }
@@ -73,7 +74,7 @@ contract RoundRobinAllocator is
 
             allocationRequestData[i] = AllocationRequestData({
                 provider: provider,
-                dataCID: allocReq[i].dataCID,
+                dataCID: CommonTypes.Cid({data: allocReq[i].dataCID}),
                 size: allocReq[i].size,
                 termMin: termMin,
                 termMax: termMax,
@@ -87,7 +88,7 @@ contract RoundRobinAllocator is
             .TransferParams({
                 to: FilAddresses.fromActorID(6),
                 amount: BigInts.fromUint256(amount),
-                operator_data: allocationRequestData.encodeDataArray()
+                operator_data: allocationRequestData.encodeRequestData()
             });
         (
             int256 exit_code,
@@ -96,7 +97,7 @@ contract RoundRobinAllocator is
 
         emit DebugBytes(msg.sender, result.recipient_data);
 
-        uint64[] memory allocationIds = result.recipient_data.decodeAllocationResponse();
+        allocationIds = result.decodeAllocationResponse();
 
         if (allocationIds.length != allocReq.length) {
             revert Errors.AllocationFailed();
