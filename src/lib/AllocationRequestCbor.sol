@@ -3,6 +3,7 @@ pragma solidity =0.8.25;
 
 import {CBOR} from "solidity-cborutils/contracts/CBOR.sol";
 import {CBORDecoder} from "filecoin-solidity/utils/CborDecode.sol";
+import {Misc} from "filecoin-solidity/utils/Misc.sol";
 import {FilecoinCBOR} from "filecoin-solidity/cbor/FilecoinCbor.sol";
 import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";
 
@@ -71,7 +72,7 @@ library AllocationRequestCbor {
         AllocationRequestData[] memory requests
     ) internal pure returns (bytes memory) {
         // Calculate the size of the CBOR buffer.
-        uint bufSize = requests.length * 73 + 3 + _calculateDataArrayPrefix(requests.length);
+        uint bufSize = requests.length * 73 + 2 + Misc.getPrefixSize(requests.length);
 
         // Create a new CBOR buffer with an initial capacity.
         CBOR.CBORBuffer memory buf = CBOR.create(bufSize);
@@ -97,18 +98,5 @@ library AllocationRequestCbor {
         CBOR.startFixedArray(buf, 0);
 
         return CBOR.data(buf);
-    }
-
-    function _calculateDataArrayPrefix(uint dataSize) internal pure returns (uint) {
-        if (dataSize <= 23) {
-            return 1;
-        } else if (dataSize <= 0xFF) {
-            return 2;
-        } else if (dataSize <= 0xFFFF) {
-            return 3;
-        } else if (dataSize <= 0xFFFFFFFF) {
-            return 5;
-        }
-        return 9;
     }
 }
