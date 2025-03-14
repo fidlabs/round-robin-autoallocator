@@ -16,6 +16,7 @@ import {FilAddresses} from "filecoin-solidity/utils/FilAddresses.sol";
 import {Errors} from "./lib/Errors.sol";
 import {AllocationRequestCbor, AllocationRequestData} from "./lib/AllocationRequestCbor.sol";
 import {AllocationResponseCbor} from "./lib/AllocationResponseCbor.sol";
+import {Storage} from "./Storage.sol";
 
 struct AllocationRequest {
     bytes dataCID;
@@ -119,7 +120,15 @@ contract RoundRobinAllocator is
         if (exit_code != 0) {
             revert Errors.DataCapTransferFailed();
         }
-        }
+
+        uint packageId = Storage.s().packageCount++;
+        Storage.AllocationPackage storage package = Storage.s().allocationPackages[packageId];
+        package.client = msg.sender;
+        package.storageProviders = [provider];
+        package.spAllocationIds[provider] = allocationIds;
+
+        Storage.s().clientAllocationPackages[msg.sender].push(packageId);
+    }
 
     /**
      * @notice The handle_filecoin_method function is a universal entry point for calls
