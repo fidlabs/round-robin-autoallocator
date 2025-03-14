@@ -9,17 +9,46 @@ import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";
 import {DataCapTypes} from "filecoin-solidity/types/DataCapTypes.sol";
 import {CBORDecoder} from "filecoin-solidity/utils/CborDecode.sol";
 import {UtilsHandlers} from "filecoin-solidity/utils/UtilsHandlers.sol";
+import {DataCapAPI} from "filecoin-solidity/DataCapAPI.sol";
+import {BigInts} from "filecoin-solidity/utils/BigInts.sol";
+import {FilAddresses} from "filecoin-solidity/utils/FilAddresses.sol";
 
 import {Errors} from "./lib/Errors.sol";
+import {AllocationRequestCbor, AllocationRequestData} from "./lib/AllocationRequestCbor.sol";
+import {AllocationResponseCbor} from "./lib/AllocationResponseCbor.sol";
 
+struct AllocationRequest {
+    bytes dataCID;
+    uint64 size;
+}
+
+/**
+ * @title RoundRobinAllocator
+ * @notice storage allocation contract
+ * @dev This contract allows clients to allocate DataCap.
+ * DataCap is allocated to storage providers choosen in a round-robin fashion on the Filecoin network.
+ * 
+ * Terminology:
+ * Allocation: DataCap allocated by a client to a specific piece of data and storage provider
+ * Claim: a provider's assertion they are storing all or part of an allocation
+ * Term: period of time for which a DataCap allocation or claim is valid or active.
+ */
 contract RoundRobinAllocator is
     UUPSUpgradeable,
     Ownable2StepUpgradeable,
     PausableUpgradeable
 {
+    using AllocationRequestCbor for AllocationRequestData[];
+    using AllocationResponseCbor for DataCapTypes.TransferReturn;
+
     uint32 constant _FRC46_TOKEN_TYPE = 2233613279;
     address private constant _DATACAP_ADDRESS =
         address(0xfF00000000000000000000000000000000000007);
+
+    event AllocationsCreated(address indexed client, AllocationRequest[] allocReq, uint64[] allocationIds ,uint256 collateral);
+
+    // TODO: remove me b4 prod
+    event DebugBytes(address indexed client, bytes data);
 
     function _authorizeUpgrade(
         address newImplementation
@@ -35,6 +64,62 @@ contract RoundRobinAllocator is
     function renounceOwnership() public view override onlyOwner {
         revert Errors.OwnershipCannotBeRenounced();
     }
+
+    function allocate(
+        AllocationRequest[] calldata allocReq
+    ) public payable returns (uint64[] memory allocationIds) {
+        if (allocReq.length == 0) {
+            revert Errors.InvalidAllocationRequest();
+        }
+
+        uint64 provider = 1000;
+        int64 termMin = 518400;
+        int64 termMax = 5256000;
+        int64 expiration = 114363;
+
+        uint totalSize = 0;
+        AllocationRequestData[]
+            memory allocationRequestData = new AllocationRequestData[](allocReq.length);
+        for (uint i = 0; i < allocReq.length; i++) {
+            totalSize += allocReq[i].size;
+
+            allocationRequestData[i] = AllocationRequestData({
+                provider: provider,
+                dataCID: CommonTypes.Cid({data: allocReq[i].dataCID}),
+                size: allocReq[i].size,
+                termMin: termMin,
+                termMax: termMax,
+                expiration: expiration
+            });
+        }
+
+        uint amount = totalSize * 10 ** 18;
+
+        DataCapTypes.TransferParams memory params = DataCapTypes
+            .TransferParams({
+                to: FilAddresses.fromActorID(6),
+                amount: BigInts.fromUint256(amount),
+                operator_data: allocationRequestData.encodeRequestData()
+            });
+        (
+            int256 exit_code,
+            DataCapTypes.TransferReturn memory result
+        ) = DataCapAPI.transfer(params);
+
+        emit DebugBytes(msg.sender, result.recipient_data);
+
+        allocationIds = result.decodeAllocationResponse();
+
+        if (allocationIds.length != allocReq.length) {
+            revert Errors.AllocationFailed();
+        }
+
+        emit AllocationsCreated(msg.sender, allocReq, allocationIds, 0);
+
+        if (exit_code != 0) {
+            revert Errors.DataCapTransferFailed();
+        }
+        }
 
     /**
      * @notice The handle_filecoin_method function is a universal entry point for calls
