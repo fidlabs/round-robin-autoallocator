@@ -22,6 +22,17 @@ struct AllocationRequest {
     uint64 size;
 }
 
+/**
+ * @title RoundRobinAllocator
+ * @notice storage allocation contract
+ * @dev This contract allows clients to allocate DataCap.
+ * DataCap is allocated to storage providers choosen in a round-robin fashion on the Filecoin network.
+ * 
+ * Terminology:
+ * Allocation: DataCap allocated by a client to a specific piece of data and storage provider
+ * Claim: a provider's assertion they are storing all or part of an allocation
+ * Term: period of time for which a DataCap allocation or claim is valid or active.
+ */
 contract RoundRobinAllocator is
     UUPSUpgradeable,
     Ownable2StepUpgradeable,
