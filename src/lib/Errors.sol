@@ -32,4 +32,22 @@ library Errors {
 
     // 0xc5271dad
     error AllocationFailed();
+
+    // 0xd0d9169a
+    error StorageEntityAlreadyExists();
+
+    // 0x87afb878
+    error StorageProviderAlreadyUsed();
+
+    // 0xe300f557
+    error CallerIsNotAllocator();
+
+    // 0xac57b77e
+    error CallerIsNotStorageEntity();
+
+    // 0xe9211a00
+    error CallerIsNotOwnerOrAllocator();
+
+    // 0xa6d5c1f0
+    error StorageEntityDoesNotExist();
 }

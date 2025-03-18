@@ -17,6 +17,10 @@ library Storage {
       mapping(uint256 => AllocationPackage) allocationPackages; // Allocation packages
       uint256 packageCount; // Number of allocation packages, used to generate unique IDs
       mapping(address => uint256[]) clientAllocationPackages; // List of allocation package IDs per client
+        address[] allocators; // List of allocator addresses
+        mapping(address => StorageEntity) storageEntities; // Storage entities
+        mapping(uint64 => bool) usedStorageProviders; // Used storage providers, used to prevent duplicates
+        address[] entityAddresses; // List of storage entity addresses
     }
 
     // Allocation batch struct, used to store allocations made by a single transaction.
@@ -24,6 +28,12 @@ library Storage {
         address client; // Client address
         uint64[] storageProviders; // List of storage provider addresses involved
         mapping(uint64 => uint64[]) spAllocationIds; // List of allocation IDs per storage provider
+    }
+
+    struct StorageEntity {
+        bool isActive; // Whether the storage entity is active
+        address owner; // Owner address, used to verify ownership
+        uint64[] storageProviders; // List of storage providers
     }
 
     /**
