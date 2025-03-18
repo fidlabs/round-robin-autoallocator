@@ -46,7 +46,12 @@ contract StorageEntityManagerTest is Test {
             assertTrue(
                 roundRobinAllocator.isStorageProviderUsed(storageProviders[0])
             );
+
+
         }
+            Storage.StorageEntity[] memory storageEntities = roundRobinAllocator
+                .getStorageEntities();
+            assertEq(storageEntities.length, allowedCallers.length);
     }
 
     function test_createStorageEntityOwnerRevert() public {
@@ -256,7 +261,7 @@ contract StorageEntityManagerTest is Test {
             storageEntity.owner,
             false
         );
-        
+
         Storage.StorageEntity memory updatedStorageEntity = roundRobinAllocator
             .getStorageEntity(storageEntity.owner);
 

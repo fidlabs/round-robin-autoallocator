@@ -56,6 +56,8 @@ abstract contract StorageEntityManager is Modifiers {
         storageEntity.storageProviders = storageProviders;
         storageEntity.isActive = true;
 
+        Storage.s().entityAddresses.push(owner);
+
         // Mark each storage provider as used
         for (uint i = 0; i < storageProviders.length; i++) {
             Storage.s().usedStorageProviders[storageProviders[i]] = true;
@@ -164,5 +166,20 @@ abstract contract StorageEntityManager is Modifiers {
         returns (bool)
     {
         return Storage.s().usedStorageProviders[storageProvider];
+    }
+
+    function getStorageEntities()
+        public
+        view
+        returns (Storage.StorageEntity[] memory)
+    {
+        address[] storage entityAddresses = Storage.s().entityAddresses;
+        Storage.StorageEntity[] memory storageEntities = new Storage.StorageEntity[](
+            entityAddresses.length
+        );
+        for (uint i = 0; i < entityAddresses.length; i++) {
+            storageEntities[i] = Storage.s().storageEntities[entityAddresses[i]];
+        }
+        return storageEntities;
     }
 }
