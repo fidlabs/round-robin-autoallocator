@@ -46,7 +46,7 @@ abstract contract StorageEntityManager is Modifiers {
         if (Storage.s().storageEntities[owner].owner != address(0)) {
             revert Errors.StorageEntityAlreadyExists();
         }
-        _checkIfAnyStorageProviderIsUsed(storageProviders);
+        _ensureNoStorageProviderUsed(storageProviders);
 
         // Create a new storage entity
         Storage.StorageEntity storage storageEntity = Storage
@@ -70,13 +70,13 @@ abstract contract StorageEntityManager is Modifiers {
         address owner,
         uint64[] calldata storageProviders
     ) public onlyStorageEntity(owner) {
-        _checkIfAnyStorageProviderIsUsed(storageProviders);
+        _ensureNoStorageProviderUsed(storageProviders);
 
         Storage.StorageEntity storage se = Storage.s().storageEntities[
             owner
         ];
 
-        _checkIfStorageEntityExists(se);
+        _ensureStorageEntityNotExists(se);
 
         for (uint i = 0; i < storageProviders.length; i++) {
             se.storageProviders.push(storageProviders[i]);
@@ -98,7 +98,7 @@ abstract contract StorageEntityManager is Modifiers {
             owner
         ];
 
-        _checkIfStorageEntityExists(se);
+        _ensureStorageEntityNotExists(se);
 
         for (uint j = 0; j < storageProviders.length; j++) {
             uint64 sp = storageProviders[j];
@@ -126,14 +126,14 @@ abstract contract StorageEntityManager is Modifiers {
             owner
         ];
 
-        _checkIfStorageEntityExists(se);
+        _ensureStorageEntityNotExists(se);
 
         se.isActive = isActive;
 
         emit StorageEntityActiveStatusChanged(msg.sender, owner, isActive);
     }
 
-    function _checkIfAnyStorageProviderIsUsed(
+    function _ensureNoStorageProviderUsed(
         uint64[] calldata storageProviders
     ) internal view {
         for (uint i = 0; i < storageProviders.length; i++) {
@@ -143,7 +143,7 @@ abstract contract StorageEntityManager is Modifiers {
         }
     }
 
-    function _checkIfStorageEntityExists(Storage.StorageEntity storage se)
+    function _ensureStorageEntityNotExists(Storage.StorageEntity storage se)
         internal
         view
     {
