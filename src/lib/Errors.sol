@@ -50,4 +50,10 @@ library Errors {
 
     // 0xa6d5c1f0
     error StorageEntityDoesNotExist();
+
+    // 0x0e7d9cac
+    error NotEnoughActiveStorageEntities();
+
+    // 0x391fe496
+    error NotEnoughStorageEntities();
 }
