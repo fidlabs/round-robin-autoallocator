@@ -17,6 +17,8 @@ import {Errors} from "./lib/Errors.sol";
 import {AllocationRequestCbor, AllocationRequestData} from "./lib/AllocationRequestCbor.sol";
 import {AllocationResponseCbor} from "./lib/AllocationResponseCbor.sol";
 import {Storage} from "./Storage.sol";
+import {AllocatorManager} from "./AllocatorManager.sol";
+import {StorageEntityManager} from "./StorageEntityManager.sol";
 
 struct AllocationRequest {
     bytes dataCID;
@@ -37,7 +39,9 @@ struct AllocationRequest {
 contract RoundRobinAllocator is
     UUPSUpgradeable,
     Ownable2StepUpgradeable,
-    PausableUpgradeable
+    PausableUpgradeable,
+    AllocatorManager,
+    StorageEntityManager
 {
     using AllocationRequestCbor for AllocationRequestData[];
     using AllocationResponseCbor for DataCapTypes.TransferReturn;

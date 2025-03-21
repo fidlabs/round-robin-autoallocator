@@ -9,19 +9,22 @@ import {DataCapActorMock} from "./mocks/ActorMock.sol";
 import {StorageMock, SALT_MOCK} from "./mocks/StorageMock.sol";
 
 contract RoundRobinAllocatorTest is Test {
-  RoundRobinAllocator public roundRobinAllocator;
-  DataCapApiMock public dataCapApiMock;
-  DataCapActorMock public actorMock;
-  StorageMock public storageMock;
+    RoundRobinAllocator public roundRobinAllocator;
+    DataCapApiMock public dataCapApiMock;
+    DataCapActorMock public actorMock;
+    StorageMock public storageMock;
 
-  address public constant CALL_ACTOR_ID = address(0xfe00000000000000000000000000000000000005);
-  address public constant datacapContract = address(0xfF00000000000000000000000000000000000007);
+    address public constant CALL_ACTOR_ID =
+        address(0xfe00000000000000000000000000000000000005);
+    address public constant datacapContract =
+        address(0xfF00000000000000000000000000000000000007);
 
     function setUp() public {
         roundRobinAllocator = new RoundRobinAllocator();
+        roundRobinAllocator.initialize(address(this));
         dataCapApiMock = new DataCapApiMock();
         actorMock = new DataCapActorMock();
-        storageMock = new StorageMock{salt:SALT_MOCK}(); // 0x3572B35A3250b0941A27D6F195F8DF7185AEcc31
+        storageMock = new StorageMock{salt: SALT_MOCK}(); // 0x3572B35A3250b0941A27D6F195F8DF7185AEcc31
 
         vm.etch(datacapContract, address(dataCapApiMock).code);
         vm.etch(CALL_ACTOR_ID, address(actorMock).code);
@@ -34,11 +37,12 @@ contract RoundRobinAllocatorTest is Test {
             size: 2048
         });
 
-        roundRobinAllocator.allocate(requests);
+        uint64[] memory allocationIds = roundRobinAllocator.allocate(requests);
+        assertEq(allocationIds.length, 1);
     }
 
     function test_multiAllocate() public {
-      uint len = 64;
+        uint len = 64;
 
         AllocationRequest[] memory requests = new AllocationRequest[](len);
         for (uint i = 0; i < len; i++) {
@@ -48,6 +52,7 @@ contract RoundRobinAllocatorTest is Test {
             });
         }
 
-        roundRobinAllocator.allocate(requests);
+        uint64[] memory allocationIds = roundRobinAllocator.allocate(requests);
+        assertEq(allocationIds.length, len);
     }
 }
