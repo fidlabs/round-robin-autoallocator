@@ -42,6 +42,9 @@ contract StorageEntityPickerTest is Test {
                 );
             }
         }
+
+        // make sure we are able to get blockhash - 5
+        vm.roll(100);
     }
 
     function test_getRandomNumber() public {

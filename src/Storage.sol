@@ -21,7 +21,7 @@ library Storage {
         mapping(address => StorageEntity) storageEntities; // Storage entities
         mapping(uint64 => bool) usedStorageProviders; // Used storage providers, used to prevent duplicates
         address[] entityAddresses; // List of storage entity addresses
-        uint64 spPickerNonce; // Nonce for the storage provider picker
+        uint256 spPickerNonce; // Nonce for the storage provider picker
     }
 
     // Allocation batch struct, used to store allocations made by a single transaction.
