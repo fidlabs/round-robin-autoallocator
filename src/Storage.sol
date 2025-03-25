@@ -4,7 +4,7 @@ pragma solidity =0.8.25;
 /**
  * @title Storage
  * @dev Storage library for the RoundRobinAllocator contract.
- * 
+ *
  * TODO: pack structs properly b4 final version
  */
 library Storage {
@@ -12,15 +12,16 @@ library Storage {
     bytes32 private constant APP_STORAGE =
         0xa65e097788136ac6708a8b2dc691e4beb32762623723cd0f224c6a07a4075100;
 
-    // Main storage struct for the RoundRobinAllocator contract.    
+    // Main storage struct for the RoundRobinAllocator contract.
     struct AppStorage {
-      mapping(uint256 => AllocationPackage) allocationPackages; // Allocation packages
-      uint256 packageCount; // Number of allocation packages, used to generate unique IDs
-      mapping(address => uint256[]) clientAllocationPackages; // List of allocation package IDs per client
+        mapping(uint256 => AllocationPackage) allocationPackages; // Allocation packages
+        uint256 packageCount; // Number of allocation packages, used to generate unique IDs // TODO: might be lees, maybe pack it
+        mapping(address => uint256[]) clientAllocationPackages; // List of allocation package IDs per client
         address[] allocators; // List of allocator addresses
         mapping(address => StorageEntity) storageEntities; // Storage entities
         mapping(uint64 => bool) usedStorageProviders; // Used storage providers, used to prevent duplicates
         address[] entityAddresses; // List of storage entity addresses
+        uint256 spPickerNonce; // Nonce for the storage provider picker
     }
 
     // Allocation batch struct, used to store allocations made by a single transaction.
