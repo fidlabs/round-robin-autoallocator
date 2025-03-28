@@ -28,8 +28,10 @@ contract StorageEntityPickerTest is Test {
         roundRobinAllocator = new RoundRobinAllocatorWrapper();
         roundRobinAllocator.initialize(address(this));
 
+        uint base = 1000;
+
         // add storage entities, half of them are inactive
-        for (uint i = 0; i < SE_INIT_COUNT; i++) {
+        for (uint i = base; i < base + SE_INIT_COUNT; i++) {
             address owner = makeAddr(vm.toString(i));
             uint64[] memory storageProviders = new uint64[](1);
             storageProviders[0] = uint64(i);

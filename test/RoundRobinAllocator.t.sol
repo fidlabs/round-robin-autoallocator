@@ -3,7 +3,7 @@ pragma solidity =0.8.25;
 
 import {Test, console} from "forge-std/Test.sol";
 import {AllocationCborTest} from "./lib/AllocationCborTest.sol";
-import {RoundRobinAllocator, AllocationRequest} from "../src/RoundRobinAllocator.sol";
+import {RoundRobinAllocator, AllocationRequest, AllocationResponse} from "../src/RoundRobinAllocator.sol";
 import {DataCapApiMock} from "./mocks/DataCapApiMock.sol";
 import {DataCapActorMock} from "./mocks/ActorMock.sol";
 import {StorageMock, SALT_MOCK} from "./mocks/StorageMock.sol";
@@ -28,6 +28,17 @@ contract RoundRobinAllocatorTest is Test {
 
         vm.etch(datacapContract, address(dataCapApiMock).code);
         vm.etch(CALL_ACTOR_ID, address(actorMock).code);
+
+        // add storage entities, half of them are inactive
+        for (uint i = 1000; i < 1003; i++) {
+            address owner = makeAddr(vm.toString(i));
+            uint64[] memory storageProviders = new uint64[](1);
+            storageProviders[0] = uint64(i);
+            roundRobinAllocator.createStorageEntity(owner, storageProviders);
+        }
+
+        // make sure we are able to get blockhash - 5
+        vm.roll(100);
     }
 
     function test_singleAllocate() public {
@@ -37,8 +48,17 @@ contract RoundRobinAllocatorTest is Test {
             size: 2048
         });
 
-        uint64[] memory allocationIds = roundRobinAllocator.allocate(requests);
-        assertEq(allocationIds.length, 1);
+        uint replicaSize = 3;
+        AllocationResponse[] memory allocationResponses = roundRobinAllocator
+            .allocate(replicaSize, requests);
+
+        assertEq(allocationResponses.length, replicaSize);
+        for (uint i = 0; i < allocationResponses.length; i++) {
+            assertEq(
+                allocationResponses[i].allocationIds.length,
+                requests.length
+            );
+        }
     }
 
     function test_multiAllocate() public {
@@ -52,7 +72,24 @@ contract RoundRobinAllocatorTest is Test {
             });
         }
 
-        uint64[] memory allocationIds = roundRobinAllocator.allocate(requests);
-        assertEq(allocationIds.length, len);
+        AllocationResponse[] memory allocationResponses = roundRobinAllocator
+            .allocate(1, requests);
+
+        uint totalAllocationIdCount = 0;
+        for (uint i = 0; i < allocationResponses.length; i++) {
+            totalAllocationIdCount += allocationResponses[i]
+                .allocationIds
+                .length;
+
+            uint expectedAllocationsPerProvider = len / 3;
+            uint expectedDiff = 1;
+            assertApproxEqAbs(
+                allocationResponses[i].allocationIds.length,
+                expectedAllocationsPerProvider,
+                expectedDiff
+            );
+        }
+
+        assertEq(totalAllocationIdCount, len);
     }
 }

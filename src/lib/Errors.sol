@@ -56,4 +56,13 @@ library Errors {
 
     // 0x391fe496
     error NotEnoughStorageEntities();
+
+    // 0xafa2b48b
+    error InvalidReplicaSize();
+
+    // 0x2b3bc985
+    error InsufficientCollateral(uint256);
+
+    // 0x449e70a5
+    error NotEnoughAllocationData();
 }
