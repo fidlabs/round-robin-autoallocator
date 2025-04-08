@@ -8,7 +8,6 @@ forge clean && forge coverage --report lcov
 
 # awk '/TN:/,/SF:test\//{if (!/SF:test\// && !/SF:script/) print; if (/TN:/ && /SF:test\//) exit}' lcov.info > lcov_without_tests.info
 # summary=$(lcov --summary lcov_without_tests.info --rc lcov_branch_coverage=1)
-
 summary=$(lcov --summary lcov.info --rc lcov_branch_coverage=1)
 
 lines_coverage=$(echo "$summary" | awk '/lines/{print $2}')
