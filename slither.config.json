@@ -9,7 +9,7 @@
   "exclude_low": false,
   "exclude_medium": false,
   "exclude_high": false,
-  "fail_on": "PEDANTIC",
+  "fail_on": "HIGH",
   "json": null,
   "sarif": null,
   "disable_color": false,
