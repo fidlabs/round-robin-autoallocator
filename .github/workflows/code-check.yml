@@ -10,10 +10,9 @@ env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  format_lint_build_analysis:
-    name: Format, Lint, Build, Test and Analysis
+  lint:
+    name: Solhint linter
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,6 +23,18 @@ jobs:
 
       - name: Install solhint
         run: npm install -g solhint@^5.0.5
+
+      - name: Run solhint
+        run: solhint 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'
+
+  format_build_analysis:
+    name: Format, Lint, Build, Test and Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -36,8 +47,8 @@ jobs:
         with:
           version: nightly
 
-      - name: Run solhint
-        run: solhint 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'
+      - name: Install lcov
+        run: sudo apt-get -y install lcov
 
       # Uncomment the following lines after running the command locally
       # - name: Run Forge fmt check
@@ -51,6 +62,9 @@ jobs:
       - name: Run Forge tests
         run: |
           forge test -vvv
+
+      - name: Check test coverage
+        run: ./ci/check-full-coverage.sh
 
       - name: Install Slither
         run: |
