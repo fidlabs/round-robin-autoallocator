@@ -1,0 +1,61 @@
+name: Check linter, formatting, build, tests and analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize]
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  format_and_lint:
+    name: Solhint linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+
+      - name: Install solhint
+        run: npm install -g solhint@^4.5
+
+      - name: Run solhint
+        run: solhint 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'
+
+      - name: Run Forge fmt check
+        run: |
+          forge --version
+          forge fmt --check
+
+  build_and_test:
+    needs: [format_and_lint]
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build --sizes
+
+      - name: Run Forge tests
+        run: |
+          forge test -vvv
+
+  code_analyze:
+    name: Code analysis
+    uses: ./.github/workflows/code-analyze.yml
