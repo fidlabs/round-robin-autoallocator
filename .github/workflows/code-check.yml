@@ -10,8 +10,7 @@ env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  format_and_lint:
-    name: Solhint linter
+  format_lint_:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,37 +24,37 @@ jobs:
       - name: Install solhint
         run: npm install -g solhint@^5.0.5
 
-      - name: Run solhint
-        run: solhint 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'
-
-      - name: Run Forge fmt check
-        run: |
-          forge --version
-          forge fmt --check
-
-  build_and_test:
-    needs: [format_and_lint]
-    name: Build and test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: "pip"
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
+      - name: Run solhint
+        run: solhint 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'
+
+      - name: Run Forge fmt check
+        run: |
+          forge fmt --check
+
       - name: Run Forge build
         run: |
-          forge --version
           forge build --sizes
 
       - name: Run Forge tests
         run: |
           forge test -vvv
 
-  code_analyze:
-    name: Code analysis
-    uses: ./.github/workflows/code-analyze.yml
+      - name: Install Slither
+        run: |
+          pip install slither-analyzer
+
+      - name: Run Slither
+        run: |
+          slither .
+        continue-on-error: true
