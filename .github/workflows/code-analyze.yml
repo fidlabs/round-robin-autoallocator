@@ -1,4 +1,4 @@
-name: Check linter, formatting, build and tests
+name: Code analysis
 
 on:
   workflow_dispatch:
