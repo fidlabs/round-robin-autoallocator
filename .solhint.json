@@ -10,7 +10,7 @@
     "no-empty-blocks": "off",
     "gas-custom-errors": "error",
     "payable-fallback": "error",
-    "const-name-snakecase": "error",
+    "const-name-snakecase": "off",
     "reason-string": "error",
     "one-contract-per-file": "off",
     "gas-struct-packing": "warn",
