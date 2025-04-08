@@ -13,7 +13,6 @@ docs/
 # Dotenv file
 .env
 
-
 z_notes
 precompiles
 broadcast
@@ -22,6 +21,5 @@ fresh.sh
 fresh_claim.sh
 grant_dc.sh
 Makefile
-slither.config.json
 report
 lcov.info
