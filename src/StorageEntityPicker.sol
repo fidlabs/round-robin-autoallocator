@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {console} from "forge-std/Console.sol";
-
 import {Storage} from "./Storage.sol";
 import {Errors} from "./lib/Errors.sol";
 
