@@ -28,7 +28,7 @@ jobs:
         run: solhint 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'
 
   format_build_analysis:
-    name: Format, Lint, Build, Test and Analysis
+    name: Format, Build, Test and Analysis
     runs-on: ubuntu-latest
 
     steps:
