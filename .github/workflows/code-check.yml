@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-node@v4
 
       - name: Install solhint
-        run: npm install -g solhint@^4.5
+        run: npm install -g solhint@^5.0.5
 
       - name: Run solhint
         run: solhint 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'

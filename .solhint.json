@@ -1,0 +1,22 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "compiler-version": "off",
+    "constructor-syntax": "error",
+    "named-parameters-mapping": "error",
+    "ordering": "off",
+    "immutable-vars-naming": "error",
+    "no-unused-import": "warn",
+    "no-empty-blocks": "warn",
+    "one-contract-per-file": "off",
+    "gas-struct-packing": "warn",
+    "gas-calldata-parameters": "warn",
+    "no-console": "warn",
+    "func-visibility": [
+      "warn",
+      {
+        "ignoreConstructors": true
+      }
+    ]
+  }
+}
