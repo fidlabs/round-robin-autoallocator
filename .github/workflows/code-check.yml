@@ -10,7 +10,8 @@ env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  format_lint_:
+  format_lint_build_analysis:
+    name: Format, Lint, Build, Test and Analysis
     runs-on: ubuntu-latest
 
     steps:
@@ -38,6 +39,7 @@ jobs:
       - name: Run solhint
         run: solhint 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'
 
+      # Uncomment the following lines after running the command locally
       # - name: Run Forge fmt check
       #   run: |
       #     forge fmt --check
