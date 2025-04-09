@@ -111,6 +111,7 @@ contract RoundRobinAllocatorTest is Test {
 
         uint256 replicaSize = 3;
         uint256 packageId = roundRobinAllocator.allocate(replicaSize, requests);
+        roundRobinAllocator.claim(packageId);
 
         AllocationPackageReturn memory allocRet = roundRobinAllocator.getAllocationPackage(packageId);
         assertEq(allocRet.claimed, true);
