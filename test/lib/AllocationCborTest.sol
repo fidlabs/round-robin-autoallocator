@@ -31,10 +31,11 @@ library AllocationCborTest {
      *   allocationIds
      * ]
      */
-    function encodeAllocationResponse(
-        uint64 allocationResult,
-        uint64[] memory allocationIds
-    ) public pure returns (bytes memory cborData) {
+    function encodeAllocationResponse(uint64 allocationResult, uint64[] memory allocationIds)
+        public
+        pure
+        returns (bytes memory cborData)
+    {
         // Create a CBOR buffer with an initial capacity.
         CBOR.CBORBuffer memory cbor = CBOR.create(256);
 
@@ -66,14 +67,8 @@ library AllocationCborTest {
     /**
      * @dev Helper function to decode a CBOR tag.
      */
-    function decodeTag(
-        bytes memory cborData,
-        uint byteIdx
-    ) internal pure returns (uint64 tag, uint newIdx) {
-        (uint8 maj, uint64 value, uint idxAfter) = CBORDecoder.parseCborHeader(
-            cborData,
-            byteIdx
-        );
+    function decodeTag(bytes memory cborData, uint256 byteIdx) internal pure returns (uint64 tag, uint256 newIdx) {
+        (uint8 maj, uint64 value, uint256 idxAfter) = CBORDecoder.parseCborHeader(cborData, byteIdx);
         require(maj == 6, "Expected CBOR tag");
         return (value, idxAfter);
     }
@@ -81,46 +76,30 @@ library AllocationCborTest {
     /**
      * @dev Decode CBOR data back into an array of AllocationRequestData.
      */
-    function decodeDataArray(
-        bytes memory cborData
-    ) public pure returns (AllocationRequestData[] memory requests) {
-        uint byteIdx = 0;
+    function decodeDataArray(bytes memory cborData) public pure returns (AllocationRequestData[] memory requests) {
+        uint256 byteIdx = 0;
 
         // Read the top-level fixed array of 2 elements.
-        uint topArrayLength;
-        (topArrayLength, byteIdx) = CBORDecoder.readFixedArray(
-            cborData,
-            byteIdx
-        );
+        uint256 topArrayLength;
+        (topArrayLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
         require(topArrayLength == 2, "Invalid top-level array length");
 
         // First element: Fixed array of allocation requests.
-        uint requestsCount;
-        (requestsCount, byteIdx) = CBORDecoder.readFixedArray(
-            cborData,
-            byteIdx
-        );
+        uint256 requestsCount;
+        (requestsCount, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
         requests = new AllocationRequestData[](requestsCount);
 
-        for (uint i = 0; i < requestsCount; i++) {
+        for (uint256 i = 0; i < requestsCount; i++) {
             // Each allocation request is a fixed array of 6 items.
-            uint arrLength;
-            (arrLength, byteIdx) = CBORDecoder.readFixedArray(
-                cborData,
-                byteIdx
-            );
+            uint256 arrLength;
+            (arrLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
             require(arrLength == 6, "Invalid allocation request array length");
 
             uint64 provider;
             (provider, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
 
-            // uint64 tag;
-            // (tag, byteIdx) = decodeTag(cborData, byteIdx);
-            // require(tag == 42, "Unexpected tag for dataCID");
-
             CommonTypes.Cid memory dataCID;
             (dataCID, byteIdx) = FilecoinCBOR.readCid(cborData, byteIdx);
-            // (dataCID, byteIdx) = CBORDecoder.readBytes(cborData, byteIdx);
 
             uint64 size;
             (size, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
@@ -134,22 +113,12 @@ library AllocationCborTest {
             int64 expiration;
             (expiration, byteIdx) = CBORDecoder.readInt64(cborData, byteIdx);
 
-            requests[i] = AllocationRequestData(
-                provider,
-                dataCID,
-                size,
-                termMin,
-                termMax,
-                expiration
-            );
+            requests[i] = AllocationRequestData(provider, dataCID, size, termMin, termMax, expiration);
         }
 
         // Second element: an empty array for ClaimExtensionRequest.
-        uint extArrayLength;
-        (extArrayLength, byteIdx) = CBORDecoder.readFixedArray(
-            cborData,
-            byteIdx
-        );
+        uint256 extArrayLength;
+        (extArrayLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
         require(extArrayLength == 0, "Expected empty claim extension array");
 
         return requests;
@@ -158,17 +127,16 @@ library AllocationCborTest {
     /**
      * @notice Deserialize CBOR encoded data into a TransferParams struct.
      */
-    function deserializeTransferParams(
-        bytes memory cborData
-    ) public pure returns (DataCapTypes.TransferParams memory params) {
-        uint byteIdx = 0;
+    function deserializeTransferParams(bytes memory cborData)
+        public
+        pure
+        returns (DataCapTypes.TransferParams memory params)
+    {
+        uint256 byteIdx = 0;
 
         // Read the top-level fixed array and ensure it has exactly 3 elements.
-        uint topArrayLength;
-        (topArrayLength, byteIdx) = CBORDecoder.readFixedArray(
-            cborData,
-            byteIdx
-        );
+        uint256 topArrayLength;
+        (topArrayLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
         require(topArrayLength == 3, "Invalid top-level array length");
 
         // First element: the "to" address as a byte string.
@@ -192,9 +160,11 @@ library AllocationCborTest {
     /**
      * @dev Serializes a TransferReturn struct to CBOR bytes.
      */
-    function serializeTransferReturn(
-        DataCapTypes.TransferReturn memory ret
-    ) internal pure returns (bytes memory cborData) {
+    function serializeTransferReturn(DataCapTypes.TransferReturn memory ret)
+        internal
+        pure
+        returns (bytes memory cborData)
+    {
         bytes memory fromBalanceBytes = ret.from_balance.serializeBigInt();
         bytes memory toBalanceBytes = ret.to_balance.serializeBigInt();
 

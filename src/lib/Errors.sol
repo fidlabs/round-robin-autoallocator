@@ -65,4 +65,22 @@ library Errors {
 
     // 0x449e70a5
     error NotEnoughAllocationData();
+
+    // 0xed3c247c
+    error InvalidClaim();
+
+    // 0xc9bab621
+    error CollateralAlreadyClaimed();
+
+    // 0x08ebe172
+    error GetClaimsFailed();
+
+    // 0x17076eb1
+    error IncompleteProviderClaims(uint64);
+
+    // 0xe9d8d821
+    error CallerIsNotEOA();
+
+    // 0x25a87396
+    error InvalidPackageId();
 }

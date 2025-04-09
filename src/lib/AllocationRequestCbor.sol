@@ -22,7 +22,7 @@ struct ProviderAllocationPayload {
 // Define parameter structs to minimize stack variables
 struct EncodingParams {
     uint64[] providers;
-    uint replicaSize;
+    uint256 replicaSize;
     int64 termMin;
     int64 termMax;
     int64 expiration;
@@ -30,8 +30,8 @@ struct EncodingParams {
 
 struct ProviderParams {
     uint64 providerId;
-    uint providerIndex;
-    uint allocCount;
+    uint256 providerIndex;
+    uint256 allocCount;
 }
 
 /**
@@ -82,6 +82,7 @@ struct ProviderParams {
  * dangling array: 1 byte
  * == 73n + 3 bytes + 1 - 9 bytes
  */
+// TODO: MOVE IT TO TEST ?!
 struct AllocationRequestData {
     // The provider (miner actor) which may claim the allocation.
     // 34993250 -> 1A 0215F462 -> 1 + 4 bytes
@@ -106,14 +107,9 @@ struct AllocationRequestData {
 }
 
 library AllocationRequestCbor {
-    function encodeRequestData(
-        AllocationRequestData[] memory requests
-    ) internal pure returns (bytes memory) {
+    function encodeRequestData(AllocationRequestData[] memory requests) internal pure returns (bytes memory) {
         // Calculate the size of the CBOR buffer.
-        uint bufSize = requests.length *
-            73 +
-            2 +
-            Misc.getPrefixSize(requests.length);
+        uint256 bufSize = requests.length * 73 + 2 + Misc.getPrefixSize(requests.length);
 
         // Create a new CBOR buffer with an initial capacity.
         CBOR.CBORBuffer memory buf = CBOR.create(bufSize);
@@ -144,7 +140,7 @@ library AllocationRequestCbor {
     function encodeAllocationDataPerProvider(
         AllocationRequest[] calldata allocReq,
         uint64[] memory providers,
-        uint replicaSize,
+        uint256 replicaSize,
         int64 termMin,
         int64 termMax,
         int64 expiration
@@ -158,23 +154,15 @@ library AllocationRequestCbor {
             expiration: expiration
         });
 
-        bytes memory encodedTerms = _preEncodeTerms(
-            termMin,
-            termMax,
-            expiration
-        );
+        bytes memory encodedTerms = _preEncodeTerms(termMin, termMax, expiration);
 
         // precompute allocations
-        (
-            uint[][] memory providerToAllocations,
-            uint[] memory counts,
-            uint64[] memory sizes
-        ) = _mapAllocationsToProviders(allocReq, providers.length, replicaSize);
+        (uint256[][] memory providerToAllocations, uint256[] memory counts, uint64[] memory sizes) =
+            _mapAllocationsToProviders(allocReq, providers.length, replicaSize);
 
-        ProviderAllocationPayload[]
-            memory results = new ProviderAllocationPayload[](providers.length);
+        ProviderAllocationPayload[] memory results = new ProviderAllocationPayload[](providers.length);
 
-        for (uint provider = 0; provider < providers.length; provider++) {
+        for (uint256 provider = 0; provider < providers.length; provider++) {
             results[provider] = _encodeProviderWithMappedAllocations(
                 allocReq,
                 params,
@@ -192,11 +180,7 @@ library AllocationRequestCbor {
     /**
      * @notice saves a lot of gas by pre-encoding all three terms, that are the same for all allocations
      */
-    function _preEncodeTerms(
-        int64 termMin,
-        int64 termMax,
-        int64 expiration
-    ) private pure returns (bytes memory) {
+    function _preEncodeTerms(int64 termMin, int64 termMax, int64 expiration) private pure returns (bytes memory) {
         CBOR.CBORBuffer memory termsBuf = CBOR.create(15); // 3 x (1 prefix + 4 bytes per int64)
 
         CBOR.writeInt64(termsBuf, termMin);
@@ -208,42 +192,36 @@ library AllocationRequestCbor {
 
     function _mapAllocationsToProviders(
         AllocationRequest[] calldata allocReq,
-        uint providersCount,
-        uint replicaSize
+        uint256 providersCount,
+        uint256 replicaSize
     )
         private
         pure
-        returns (
-            uint[][] memory providerToAllocations,
-            uint[] memory counts,
-            uint64[] memory totalSizes
-        )
+        returns (uint256[][] memory providerToAllocations, uint256[] memory counts, uint64[] memory totalSizes)
     {
-        counts = new uint[](providersCount);
+        counts = new uint256[](providersCount);
         totalSizes = new uint64[](providersCount);
 
-        for (uint i = 0; i < allocReq.length; i++) {
+        for (uint256 i = 0; i < allocReq.length; i++) {
             AllocationRequest calldata req = allocReq[i];
-            for (uint r = 0; r < replicaSize; r++) {
-                uint providerIndex = (i + r) % providersCount;
+            for (uint256 r = 0; r < replicaSize; r++) {
+                uint256 providerIndex = (i + r) % providersCount;
                 counts[providerIndex]++;
                 totalSizes[providerIndex] += req.size;
             }
         }
 
-        providerToAllocations = new uint[][](providersCount);
-        for (uint provider = 0; provider < providersCount; provider++) {
-            providerToAllocations[provider] = new uint[](counts[provider]);
+        providerToAllocations = new uint256[][](providersCount);
+        for (uint256 provider = 0; provider < providersCount; provider++) {
+            providerToAllocations[provider] = new uint256[](counts[provider]);
         }
 
-        uint[] memory indexes = new uint[](providersCount);
+        uint256[] memory indexes = new uint256[](providersCount);
 
-        for (uint i = 0; i < allocReq.length; i++) {
-            for (uint r = 0; r < replicaSize; r++) {
-                uint providerIndex = (i + r) % providersCount;
-                providerToAllocations[providerIndex][
-                    indexes[providerIndex]
-                ] = i;
+        for (uint256 i = 0; i < allocReq.length; i++) {
+            for (uint256 r = 0; r < replicaSize; r++) {
+                uint256 providerIndex = (i + r) % providersCount;
+                providerToAllocations[providerIndex][indexes[providerIndex]] = i;
                 indexes[providerIndex]++;
             }
         }
@@ -254,11 +232,11 @@ library AllocationRequestCbor {
     function _encodeProviderWithMappedAllocations(
         AllocationRequest[] calldata allocReq,
         EncodingParams memory params,
-        uint allocCount,
+        uint256 allocCount,
         uint64 totalSize,
-        uint providerIndex,
-        uint[] memory allocIndexes,
-         bytes memory encodedTerms
+        uint256 providerIndex,
+        uint256[] memory allocIndexes,
+        bytes memory encodedTerms
     ) private pure returns (ProviderAllocationPayload memory result) {
         uint64 providerId = params.providers[providerIndex];
 
@@ -266,19 +244,14 @@ library AllocationRequestCbor {
         result.totalSize = totalSize;
         result.count = uint64(allocCount);
 
-        uint bufSize = allocCount * 73 + 2 + Misc.getPrefixSize(allocCount);
+        uint256 bufSize = allocCount * 73 + 2 + Misc.getPrefixSize(allocCount);
         CBOR.CBORBuffer memory buffer = CBOR.create(bufSize);
 
         CBOR.startFixedArray(buffer, 2);
         CBOR.startFixedArray(buffer, uint64(allocCount));
 
-        for (uint i = 0; i < allocIndexes.length; i++) {
-            _encodeAllocation(
-                buffer,
-                allocReq[allocIndexes[i]],
-                providerId,
-                encodedTerms
-            );
+        for (uint256 i = 0; i < allocIndexes.length; i++) {
+            _encodeAllocation(buffer, allocReq[allocIndexes[i]], providerId, encodedTerms);
         }
 
         CBOR.startFixedArray(buffer, 0);
@@ -291,7 +264,7 @@ library AllocationRequestCbor {
         CBOR.CBORBuffer memory buffer,
         AllocationRequest calldata req,
         uint64 providerId,
-         bytes memory encodedTerms
+        bytes memory encodedTerms
     ) private pure {
         CBOR.startFixedArray(buffer, 6);
         CBOR.writeUInt64(buffer, providerId);

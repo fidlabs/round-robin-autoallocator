@@ -11,31 +11,25 @@ contract AllocationCborTest is Test {
     using AllocationResponseCbor for DataCapTypes.TransferReturn;
     using AllocationRequestCbor for AllocationRequestData[];
 
-    function _transferReturnFromBytes(
-        bytes memory data
-    ) private pure returns (DataCapTypes.TransferReturn memory) {
-        return
-            DataCapTypes.TransferReturn({
-                from_balance: CommonTypes.BigInt({val: hex"00", neg: false}),
-                to_balance: CommonTypes.BigInt({val: hex"00", neg: false}),
-                recipient_data: data
-            });
+    function _transferReturnFromBytes(bytes memory data) private pure returns (DataCapTypes.TransferReturn memory) {
+        return DataCapTypes.TransferReturn({
+            from_balance: CommonTypes.BigInt({val: hex"00", neg: false}),
+            to_balance: CommonTypes.BigInt({val: hex"00", neg: false}),
+            recipient_data: data
+        });
     }
 
     function test_singleResponseDecode() public pure {
         bytes memory recipient_data = hex"838201808200808104";
-        uint64[] memory allocationIds = _transferReturnFromBytes(recipient_data)
-            .decodeAllocationResponse();
+        uint64[] memory allocationIds = _transferReturnFromBytes(recipient_data).decodeAllocationResponse();
 
         assertEq(allocationIds.length, 1);
         assertEq(allocationIds[0], 4);
     }
 
     function test_multiResponseDecode() public pure {
-        bytes
-            memory recipient_data = hex"83820c808200808c05060708090a0b0c0d0e0f10000000000000000000000000";
-        uint64[] memory allocationIds = _transferReturnFromBytes(recipient_data)
-            .decodeAllocationResponse();
+        bytes memory recipient_data = hex"83820c808200808c05060708090a0b0c0d0e0f10000000000000000000000000";
+        uint64[] memory allocationIds = _transferReturnFromBytes(recipient_data).decodeAllocationResponse();
 
         assertEq(allocationIds.length, 12);
         assertEq(allocationIds[0], 5);
@@ -43,8 +37,7 @@ contract AllocationCborTest is Test {
     }
 
     function test_singleRequestEncode() public pure {
-        AllocationRequestData[]
-            memory allocationRequestData = new AllocationRequestData[](1);
+        AllocationRequestData[] memory allocationRequestData = new AllocationRequestData[](1);
         allocationRequestData[0] = AllocationRequestData({
             provider: 1000,
             dataCID: CommonTypes.Cid({
@@ -65,8 +58,7 @@ contract AllocationCborTest is Test {
     }
 
     function test_multiRequestEncode() public pure {
-        AllocationRequestData[]
-            memory allocationRequestData = new AllocationRequestData[](2);
+        AllocationRequestData[] memory allocationRequestData = new AllocationRequestData[](2);
         allocationRequestData[0] = AllocationRequestData({
             provider: 1000,
             dataCID: CommonTypes.Cid({

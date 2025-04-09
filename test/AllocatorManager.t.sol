@@ -34,19 +34,13 @@ contract AllocatorManagerTest is Test {
 
     function test_addAllocatorRevertOwner() public {
         vm.prank(aliceAddress);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector,
-                aliceAddress
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, aliceAddress));
         roundRobinAllocator.addAllocator(aliceAddress);
     }
 
     /**
      * ===== REMOVE ALLOCATOR =====
      */
-
     function test_removeAllocatorSuccess() public {
         roundRobinAllocator.addAllocator(aliceAddress);
         assertEq(roundRobinAllocator.getAllocators().length, 1, "Allocator not added");
@@ -59,12 +53,7 @@ contract AllocatorManagerTest is Test {
 
     function test_removeAllocatorRevertOwner() public {
         vm.prank(aliceAddress);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector,
-                aliceAddress
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, aliceAddress));
         roundRobinAllocator.removeAllocator(aliceAddress);
     }
 

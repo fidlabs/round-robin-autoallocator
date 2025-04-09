@@ -9,7 +9,6 @@ import {Options} from "openzeppelin-foundry-upgrades/Options.sol";
 import {RoundRobinAllocator} from "../src/RoundRobinAllocator.sol";
 
 contract DevnetDeploy is Script {
-    
     function getProxyAddress() internal view returns (address) {
         return vm.envAddress("PROXY_ADDRESS_TEST");
     }
@@ -28,15 +27,8 @@ contract DevnetDeploy is Script {
         address proxy = getProxyAddress();
 
         if (proxy == address(0) || proxy.code.length == 0) {
-            bytes memory initializeData = abi.encodeWithSelector(
-                RoundRobinAllocator.initialize.selector,
-                msg.sender
-            );
-            proxy = Upgrades.deployUUPSProxy(
-                "RoundRobinAllocator.sol",
-                initializeData,
-                opts
-            );
+            bytes memory initializeData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, msg.sender);
+            proxy = Upgrades.deployUUPSProxy("RoundRobinAllocator.sol", initializeData, opts);
             console.log("Conract deployed.");
         } else {
             opts.unsafeSkipStorageCheck = true; // skip storage layout check, contract does not have direct storage
@@ -48,8 +40,8 @@ contract DevnetDeploy is Script {
                 opts
             );
             console.log("Conract upgraded.");
-        } 
-        
+        }
+
         // INFO: CONTRACT_ADDRESS log is used in fresh.sh
         console.log("CONTRACT_ADDRESS:", proxy);
 

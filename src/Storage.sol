@@ -9,13 +9,12 @@ pragma solidity =0.8.25;
  */
 library Storage {
     // keccak256(abi.encode(uint256(keccak256("roundrobinallocator.app.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant APP_STORAGE =
-        0xa65e097788136ac6708a8b2dc691e4beb32762623723cd0f224c6a07a4075100;
-    uint private constant APP_CONFIG_SLOT = 0;
+    bytes32 private constant APP_STORAGE = 0xa65e097788136ac6708a8b2dc691e4beb32762623723cd0f224c6a07a4075100;
+    uint256 private constant APP_CONFIG_SLOT = 0;
 
     // Main storage struct for the RoundRobinAllocator contract.
     struct AppStorage {
-        mapping(uint => AppConfig) appConfig; // Application configuration
+        mapping(uint256 => AppConfig) appConfig; // Application configuration
         mapping(uint256 => AllocationPackage) allocationPackages; // Allocation packages
         uint256 packageCount; // Number of allocation packages, used to generate unique IDs // TODO: might be lees, maybe pack it
         mapping(address => uint256[]) clientAllocationPackages; // List of allocation package IDs per client
@@ -27,10 +26,10 @@ library Storage {
     }
 
     struct AppConfig {
-        uint minReplicas; // Minimum number of replicas
-        uint maxReplicas; // Maximum number of replicas
-        uint collateralPerCID; // Collateral per CID
-        uint minRequiredStorageProviders; // Minimum required storage providers
+        uint256 minReplicas; // Minimum number of replicas
+        uint256 maxReplicas; // Maximum number of replicas
+        uint256 collateralPerCID; // Collateral per CID
+        uint256 minRequiredStorageProviders; // Minimum required storage providers
     }
 
     // Allocation batch struct, used to store allocations made by a single transaction.
@@ -38,6 +37,8 @@ library Storage {
         address client; // Client address
         uint64[] storageProviders; // List of storage provider addresses involved
         mapping(uint64 => uint64[]) spAllocationIds; // List of allocation IDs per storage provider
+        bool claimed; // Whether the allocation has been claimed
+        uint256 collateral; // Collateral amount
     }
 
     struct StorageEntity {
