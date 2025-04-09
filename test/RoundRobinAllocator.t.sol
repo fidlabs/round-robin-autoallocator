@@ -111,14 +111,9 @@ contract RoundRobinAllocatorTest is Test {
 
         uint256 replicaSize = 3;
         uint256 packageId = roundRobinAllocator.allocate(replicaSize, requests);
-        {
-            AllocationPackageReturn memory allocRet = roundRobinAllocator.getAllocationPackage(packageId);
-            roundRobinAllocator.claim(packageId);
-        }
-        {
-            AllocationPackageReturn memory allocRet = roundRobinAllocator.getAllocationPackage(packageId);
-            assertEq(allocRet.claimed, true);
-        }
+
+        AllocationPackageReturn memory allocRet = roundRobinAllocator.getAllocationPackage(packageId);
+        assertEq(allocRet.claimed, true);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
         roundRobinAllocator.claim(packageId);
