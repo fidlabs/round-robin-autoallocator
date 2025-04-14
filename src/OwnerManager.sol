@@ -2,6 +2,7 @@
 pragma solidity =0.8.25;
 
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {Storage} from "./Storage.sol";
 import {Errors} from "./lib/Errors.sol";
 import {Events} from "./lib/Events.sol";
@@ -10,7 +11,15 @@ import {Events} from "./lib/Events.sol";
  * @title OwnerManager
  * @notice This contract provides functions for the owner of the RoundRobinAllocator contract.
  */
-abstract contract OwnerManager is Ownable2StepUpgradeable {
+abstract contract OwnerManager is Ownable2StepUpgradeable, PausableUpgradeable {
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     function setCollateralPerCID(uint256 collateralPerCID) external onlyOwner {
         Storage.getAppConfig().collateralPerCID = collateralPerCID;
     }
