@@ -8,7 +8,11 @@ import {FilAddressIdConverter} from "filecoin-solidity/utils/FilAddressIdConvert
 contract ActorMock {
     error Err();
 
-    fallback(bytes calldata data) external returns (bytes memory) {
+    receive() external payable {
+        revert Err();
+    }
+
+    fallback(bytes calldata data) external payable returns (bytes memory) {
         (uint256 methodNum,,,,, uint64 target) = abi.decode(data, (uint64, uint256, uint64, uint64, bytes, uint64));
 
         console.log("ActorMock: methodNum: %s, target: %s", methodNum, target);

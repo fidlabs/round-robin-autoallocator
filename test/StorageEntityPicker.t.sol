@@ -24,7 +24,7 @@ contract StorageEntityPickerTest is Test {
 
     function setUp() public {
         roundRobinAllocator = new RoundRobinAllocatorWrapper();
-        roundRobinAllocator.initialize(address(this));
+        roundRobinAllocator.initialize(address(this), 1, 3);
 
         uint256 base = 1000;
 
