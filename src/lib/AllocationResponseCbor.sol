@@ -14,19 +14,18 @@ library AllocationResponseCbor {
      * extension_results
      * new_allocations
      */
-    function decodeAllocationResponse(
-        DataCapTypes.TransferReturn memory result
-    ) internal pure returns (uint64[] memory allocationIds) {
+    function decodeAllocationResponse(DataCapTypes.TransferReturn memory result)
+        internal
+        pure
+        returns (uint64[] memory allocationIds)
+    {
         bytes memory cborData = result.recipient_data;
 
         uint256 topArrayLength;
         uint256 byteIdx = 0;
 
         // Read the top-level array.
-        (topArrayLength, byteIdx) = CBORDecoder.readFixedArray(
-            cborData,
-            byteIdx
-        );
+        (topArrayLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
         // Expect exactly 3 elements.
         require(topArrayLength == 3, "Invalid top-level array length");
 
@@ -34,19 +33,13 @@ library AllocationResponseCbor {
         // allocation_results: [newAllocations, [?]]
         {
             uint256 firstElemLength;
-            (firstElemLength, byteIdx) = CBORDecoder.readFixedArray(
-                cborData,
-                byteIdx
-            );
+            (firstElemLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
             require(firstElemLength == 2, "Invalid first element length");
             // First sub-element
             (, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
             // Second sub-element
             uint256 innerLength;
-            (innerLength, byteIdx) = CBORDecoder.readFixedArray(
-                cborData,
-                byteIdx
-            );
+            (innerLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
             require(innerLength == 0, "Expected empty array in first element");
         }
 
@@ -54,29 +47,20 @@ library AllocationResponseCbor {
         // extension_results: [extendedAllocations, [?]]
         {
             uint256 secondElemLength;
-            (secondElemLength, byteIdx) = CBORDecoder.readFixedArray(
-                cborData,
-                byteIdx
-            );
+            (secondElemLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
             require(secondElemLength == 2, "Invalid second element length");
             // First sub-element, extension are not supported atm so we ignore it
             (, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
             // Second sub-element
             uint256 innerLength;
-            (innerLength, byteIdx) = CBORDecoder.readFixedArray(
-                cborData,
-                byteIdx
-            );
+            (innerLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
             require(innerLength == 0, "Expected empty array in second element");
         }
 
         // third element: the allocation IDs array
         // new_allocations: [allocationID_1, ..., allocationID_N]
         uint256 allocationIdsLength;
-        (allocationIdsLength, byteIdx) = CBORDecoder.readFixedArray(
-            cborData,
-            byteIdx
-        );
+        (allocationIdsLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
 
         allocationIds = new uint64[](allocationIdsLength);
         for (uint256 i = 0; i < allocationIdsLength; i++) {

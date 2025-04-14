@@ -10,11 +10,11 @@ import {Errors} from "./lib/Errors.sol";
  * @notice Helper contract for shared modifiers
  */
 abstract contract Modifiers is Ownable2StepUpgradeable {
-      modifier onlyOwnerOrAllocator() {
+    modifier onlyOwnerOrAllocator() {
         if (msg.sender != owner()) {
             bool isAlloc = false;
             Storage.AppStorage storage s = Storage.s();
-            for (uint i = 0; i < s.allocators.length; i++) {
+            for (uint256 i = 0; i < s.allocators.length; i++) {
                 if (s.allocators[i] == msg.sender) {
                     isAlloc = true;
                     break;
@@ -30,7 +30,7 @@ abstract contract Modifiers is Ownable2StepUpgradeable {
     modifier onlyAllocator() {
         Storage.AppStorage storage s = Storage.s();
         bool isAlloc = false;
-        for (uint i = 0; i < s.allocators.length; i++) {
+        for (uint256 i = 0; i < s.allocators.length; i++) {
             if (s.allocators[i] == msg.sender) {
                 isAlloc = true;
                 break;
@@ -45,6 +45,13 @@ abstract contract Modifiers is Ownable2StepUpgradeable {
     modifier onlyStorageEntity(address storageEntity) {
         if (msg.sender != storageEntity) {
             revert Errors.CallerIsNotStorageEntity();
+        }
+        _;
+    }
+
+    modifier onlyEOA() {
+        if (msg.sender != tx.origin) {
+            revert Errors.CallerIsNotEOA();
         }
         _;
     }

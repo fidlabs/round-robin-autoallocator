@@ -1,20 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
+import {console} from "forge-std/console.sol";
+
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";
 import {DataCapTypes} from "filecoin-solidity/types/DataCapTypes.sol";
+import {VerifRegTypes} from "filecoin-solidity/types/VerifRegTypes.sol";
 import {CBORDecoder} from "filecoin-solidity/utils/CborDecode.sol";
 import {UtilsHandlers} from "filecoin-solidity/utils/UtilsHandlers.sol";
 import {DataCapAPI} from "filecoin-solidity/DataCapAPI.sol";
+import {VerifRegAPI} from "filecoin-solidity/VerifRegAPI.sol";
 import {BigInts} from "filecoin-solidity/utils/BigInts.sol";
 import {FilAddresses} from "filecoin-solidity/utils/FilAddresses.sol";
 
 import {Errors} from "./lib/Errors.sol";
-import {AllocationRequestCbor, AllocationRequestData, ProviderAllocationPayload} from "./lib/AllocationRequestCbor.sol";
+import {
+    AllocationRequestCbor, AllocationRequestData, ProviderAllocationPayload
+} from "./lib/AllocationRequestCbor.sol";
 import {AllocationResponseCbor} from "./lib/AllocationResponseCbor.sol";
 import {Storage} from "./Storage.sol";
 import {AllocatorManager} from "./AllocatorManager.sol";
@@ -26,9 +32,12 @@ struct AllocationRequest {
     uint64 size;
 }
 
-struct AllocationResponse {
-    uint64 provider;
-    uint64[] allocationIds;
+struct AllocationPackageReturn {
+    address client;
+    uint64[] storageProviders;
+    uint64[][] spAllocationIds;
+    bool claimed;
+    uint256 collateral;
 }
 
 /**
@@ -36,7 +45,7 @@ struct AllocationResponse {
  * @notice storage allocation contract
  * @dev This contract allows clients to allocate DataCap.
  * DataCap is allocated to storage providers choosen in a round-robin fashion on the Filecoin network.
- * 
+ *
  * Terminology:
  * Allocation: DataCap allocated by a client to a specific piece of data and storage provider
  * Claim: a provider's assertion they are storing all or part of an allocation
@@ -55,24 +64,25 @@ contract RoundRobinAllocator is
     using AllocationResponseCbor for DataCapTypes.TransferReturn;
 
     uint32 constant _FRC46_TOKEN_TYPE = 2233613279;
-    address private constant _DATACAP_ADDRESS =
-        address(0xfF00000000000000000000000000000000000007);
+    address private constant _DATACAP_ADDRESS = address(0xfF00000000000000000000000000000000000007);
 
     event AllocationCreated(
         address indexed client,
         uint64 indexed provider,
+        uint256 indexed packageId,
         uint256 allocationSize,
         uint64[] allocationIds,
         uint256 collateral
+    );
+    event AllocationClaimed(
+        address indexed client, uint256 indexed packageId, uint64 indexed provider, uint64[] allocationIds
     );
 
     // TODO: remove me b4 prod
     event DebugBytes(address indexed client, bytes data);
     event DebugUint(address indexed client, uint256 data);
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     function initialize(address initialOwner) public initializer {
         __Ownable2Step_init();
@@ -93,94 +103,130 @@ contract RoundRobinAllocator is
         revert Errors.OwnershipCannotBeRenounced();
     }
 
-    function allocate(
-        uint replicaSize,
-        AllocationRequest[] calldata allocReq
-    ) public payable returns (AllocationResponse[] memory allocationResponses) {
+    function allocate(uint256 replicaSize, AllocationRequest[] calldata allocReq) public payable returns (uint256) {
         if (allocReq.length == 0) {
             revert Errors.InvalidAllocationRequest();
         }
         Storage.AppConfig memory appConfig = Storage.getAppConfig();
-        if (
-            replicaSize < appConfig.minReplicas ||
-            replicaSize > appConfig.maxReplicas
-        ) {
+        if (replicaSize < appConfig.minReplicas || replicaSize > appConfig.maxReplicas) {
             revert Errors.InvalidReplicaSize();
         }
-        if (
-            allocReq.length * replicaSize <
-            appConfig.minRequiredStorageProviders
-        ) {
+        if (allocReq.length * replicaSize < appConfig.minRequiredStorageProviders) {
             revert Errors.NotEnoughAllocationData();
         }
+        // uint requiredCollateral = appConfig.collateralPerCID *
+        //     allocReq.length *
+        //     replicaSize;
+        // if (msg.value < requiredCollateral) {
+        //     revert Errors.InsufficientCollateral(requiredCollateral);
+        // }
 
-        uint64[] memory providers = _pickStorageProviders(
-            appConfig.minRequiredStorageProviders
-        );
-  
+        uint64[] memory providers = _pickStorageProviders(appConfig.minRequiredStorageProviders);
+
         int64 termMin = 518400;
         int64 termMax = 5256000;
         int64 expiration = 114363;
-        ProviderAllocationPayload[] memory providerPayloads = allocReq
-            .encodeAllocationDataPerProvider(
-                providers,
-                replicaSize,
-                termMin,
-                termMax,
-                expiration
-            );
+        ProviderAllocationPayload[] memory providerPayloads =
+            allocReq.encodeAllocationDataPerProvider(providers, replicaSize, termMin, termMax, expiration);
 
-        uint packageId = Storage.s().packageCount++;
+        uint256 packageId = Storage.s().packageCount++;
         Storage.s().clientAllocationPackages[msg.sender].push(packageId);
 
-        Storage.AllocationPackage storage package = Storage
-            .s()
-            .allocationPackages[packageId];
+        Storage.AllocationPackage storage package = Storage.s().allocationPackages[packageId];
         package.client = msg.sender;
         package.storageProviders = providers;
 
-        allocationResponses = new AllocationResponse[](providerPayloads.length);
-
         // send data cap separately for each provider so we can track allocation IDs per SP
-        for (uint i = 0; i < providerPayloads.length; i++) {
-            uint amount = uint256(providerPayloads[i].totalSize) * 10 ** 18;
-        DataCapTypes.TransferParams memory params = DataCapTypes
-            .TransferParams({
+        for (uint256 i = 0; i < providerPayloads.length; i++) {
+            uint256 amount = uint256(providerPayloads[i].totalSize) * 10 ** 18;
+            DataCapTypes.TransferParams memory params = DataCapTypes.TransferParams({
                 to: FilAddresses.fromActorID(6),
                 amount: BigInts.fromUint256(amount),
-                    operator_data: providerPayloads[i].payload
+                operator_data: providerPayloads[i].payload
             });
-        (
-            int256 exit_code,
-            DataCapTypes.TransferReturn memory result
-        ) = DataCapAPI.transfer(params);
+            (int256 exit_code, DataCapTypes.TransferReturn memory result) = DataCapAPI.transfer(params);
 
             uint64[] memory allocationIds = result.decodeAllocationResponse();
-            package.spAllocationIds[
-                providerPayloads[i].provider
-            ] = allocationIds;
-
-            allocationResponses[i] = AllocationResponse({
-                provider: providerPayloads[i].provider,
-                allocationIds: allocationIds
-            });
+            package.spAllocationIds[providerPayloads[i].provider] = allocationIds;
 
             if (allocationIds.length != providerPayloads[i].count) {
-            revert Errors.AllocationFailed();
-        }
+                revert Errors.AllocationFailed();
+            }
 
             emit AllocationCreated(
-                msg.sender,
-                providerPayloads[i].provider,
-                amount,
-                allocationIds,
-                0
+                msg.sender, providerPayloads[i].provider, packageId, amount, allocationIds, msg.value
             );
 
-        if (exit_code != 0) {
-            revert Errors.DataCapTransferFailed();
+            if (exit_code != 0) {
+                revert Errors.DataCapTransferFailed();
+            }
         }
+
+        return packageId;
+    }
+
+    function claim(uint256 packageId) public {
+        Storage.AllocationPackage storage package = Storage.s().allocationPackages[packageId];
+
+        if (package.client == address(0) || package.storageProviders.length == 0) {
+            revert Errors.InvalidClaim();
         }
+        if (package.claimed) {
+            revert Errors.CollateralAlreadyClaimed();
+        }
+        package.claimed = true;
+
+        for (uint256 sp = 0; sp < package.storageProviders.length; sp++) {
+            uint64 provider = package.storageProviders[sp];
+            uint64[] memory allocationIds = package.spAllocationIds[provider];
+
+            VerifRegTypes.GetClaimsParams memory params = VerifRegTypes.GetClaimsParams({
+                provider: CommonTypes.FilActorId.wrap(provider),
+                claim_ids: _allocationIdsToClaimIds(allocationIds)
+            });
+
+            (int256 exit_code, VerifRegTypes.GetClaimsReturn memory result) = VerifRegAPI.getClaims(params);
+
+            if (exit_code != 0) {
+                revert Errors.GetClaimsFailed();
+            }
+
+            // https://github.com/filecoin-project/builtin-actors/blob/5aad41bfa29d8eab78f91eb5c82a03466c6062d2/actors/verifreg/src/lib.rs#L505-L506
+            if (result.batch_info.success_count != allocationIds.length) {
+                revert Errors.IncompleteProviderClaims(provider);
+            }
+
+            emit AllocationClaimed(package.client, packageId, provider, allocationIds);
+        }
+    }
+
+    function _allocationIdsToClaimIds(uint64[] memory allocationIds)
+        internal
+        pure
+        returns (CommonTypes.FilActorId[] memory claimIds)
+    {
+        claimIds = new CommonTypes.FilActorId[](allocationIds.length);
+        for (uint256 i = 0; i < allocationIds.length; i++) {
+            claimIds[i] = CommonTypes.FilActorId.wrap(allocationIds[i]);
+        }
+    }
+
+    function getAllocationPackage(uint256 packageId) external view returns (AllocationPackageReturn memory ret) {
+        Storage.AllocationPackage storage package = Storage.s().allocationPackages[packageId];
+
+        if (package.client == address(0)) {
+            revert Errors.InvalidPackageId();
+        }
+
+        ret.client = package.client;
+        ret.storageProviders = package.storageProviders;
+        ret.spAllocationIds = new uint64[][](package.storageProviders.length);
+        for (uint256 sp = 0; sp < package.storageProviders.length; sp++) {
+            uint64 provider = package.storageProviders[sp];
+            ret.spAllocationIds[sp] = package.spAllocationIds[provider];
+        }
+        ret.claimed = package.claimed;
+        ret.collateral = package.collateral;
     }
 
     /**
@@ -199,31 +245,26 @@ contract RoundRobinAllocator is
      * @dev Reverts if trying to send a unsupported token
      */
     // solhint-disable func-name-mixedcase
-    function handle_filecoin_method(
-        uint64 method,
-        uint64 inputCodec,
-        bytes calldata params
-    ) external view returns (uint32 exitCode, uint64 codec, bytes memory data) {
-        if (msg.sender != _DATACAP_ADDRESS)
+    function handle_filecoin_method(uint64 method, uint64 inputCodec, bytes calldata params)
+        external
+        view
+        returns (uint32 exitCode, uint64 codec, bytes memory data)
+    {
+        if (msg.sender != _DATACAP_ADDRESS) {
             revert Errors.InvalidCaller(msg.sender, _DATACAP_ADDRESS);
-        CommonTypes.UniversalReceiverParams
-            memory receiverParams = UtilsHandlers.handleFilecoinMethod(
-                method,
-                inputCodec,
-                params
-            );
-        if (receiverParams.type_ != _FRC46_TOKEN_TYPE)
+        }
+        CommonTypes.UniversalReceiverParams memory receiverParams =
+            UtilsHandlers.handleFilecoinMethod(method, inputCodec, params);
+        if (receiverParams.type_ != _FRC46_TOKEN_TYPE) {
             revert Errors.UnsupportedType();
-        (uint256 tokenReceivedLength, uint256 byteIdx) = CBORDecoder
-            .readFixedArray(receiverParams.payload, 0);
+        }
+        (uint256 tokenReceivedLength, uint256 byteIdx) = CBORDecoder.readFixedArray(receiverParams.payload, 0);
         if (tokenReceivedLength != 6) revert Errors.InvalidTokenReceived();
         uint64 from;
-        (from, byteIdx) = CBORDecoder.readUInt64(
-            receiverParams.payload,
-            byteIdx
-        ); // payload == FRC46TokenReceived
-        if (from != CommonTypes.FilActorId.unwrap(DataCapTypes.ActorID))
+        (from, byteIdx) = CBORDecoder.readUInt64(receiverParams.payload, byteIdx); // payload == FRC46TokenReceived
+        if (from != CommonTypes.FilActorId.unwrap(DataCapTypes.ActorID)) {
             revert Errors.UnsupportedToken();
+        }
         exitCode = 0;
         codec = 0;
         data = "";
