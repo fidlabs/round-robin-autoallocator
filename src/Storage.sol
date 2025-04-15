@@ -35,9 +35,9 @@ library Storage {
     // Allocation batch struct, used to store allocations made by a single transaction.
     struct AllocationPackage {
         address client; // Client address
+        bool claimed; // Whether the allocation has been claimed
         uint64[] storageProviders; // List of storage provider addresses involved
         mapping(uint64 => uint64[]) spAllocationIds; // List of allocation IDs per storage provider
-        bool claimed; // Whether the allocation has been claimed
         uint256 collateral; // Collateral amount
     }
 
@@ -51,11 +51,11 @@ library Storage {
      * @dev Returns a pointer to the storage namespace.
      */
     function _getAppStorage() private pure returns (AppStorage storage $) {
-        // slither-disable-start assembly-usage
+        // slither-disable-next-line assembly-usage
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             $.slot := APP_STORAGE
         }
-        // slither-disable-end assembly-usage
     }
 
     /**

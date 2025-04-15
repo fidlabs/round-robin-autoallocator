@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {console} from "forge-std/console.sol";
-
 bytes32 constant SALT_MOCK = 0x1718932719327103279810329817320918320918320918320930918320918321;
 
 /**
@@ -20,6 +18,7 @@ contract StorageMock {
     }
 
     function s() internal pure returns (Storage storage $) {
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             $.slot := SLOT
         }

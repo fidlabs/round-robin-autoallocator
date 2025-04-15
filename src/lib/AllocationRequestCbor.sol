@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import "@ensdomains/buffer/contracts/Buffer.sol";
+import {Buffer} from "@ensdomains/buffer/contracts/Buffer.sol";
 import {CBOR} from "solidity-cborutils/contracts/CBOR.sol";
-import {CBORDecoder} from "filecoin-solidity/utils/CborDecode.sol";
 import {Misc} from "filecoin-solidity/utils/Misc.sol";
 import {FilecoinCBOR} from "filecoin-solidity/cbor/FilecoinCbor.sol";
 import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";

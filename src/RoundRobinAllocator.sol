@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {console} from "forge-std/console.sol";
-
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
@@ -34,9 +32,9 @@ struct AllocationRequest {
 
 struct AllocationPackageReturn {
     address client;
+    bool claimed;
     uint64[] storageProviders;
     uint64[][] spAllocationIds;
-    bool claimed;
     uint256 collateral;
 }
 

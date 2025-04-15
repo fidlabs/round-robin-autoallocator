@@ -83,4 +83,16 @@ library Errors {
 
     // 0x25a87396
     error InvalidPackageId();
+
+    // 0x3a4735aa
+    error InvalidTopLevelArray();
+
+    // 0xccfa6de2
+    error InvalidFirstElement();
+
+    // 0x87537aa0
+    error InvalidSecondElement();
+
+    // 0xe5f19a39
+    error InvalidThirdElement();
 }

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {Test, console} from "forge-std/Test.sol";
-import {AllocationCborTest} from "./lib/AllocationCborTest.sol";
+import {Test} from "forge-std/Test.sol";
 import {RoundRobinAllocator, AllocationRequest, AllocationPackageReturn} from "../src/RoundRobinAllocator.sol";
 import {DataCapApiMock} from "./mocks/DataCapApiMock.sol";
 import {VerifRegApiMock} from "./mocks/VerifRegApiMock.sol";

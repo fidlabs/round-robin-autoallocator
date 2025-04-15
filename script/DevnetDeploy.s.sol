@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import "forge-std/console.sol";
-import "forge-std/Script.sol";
+import {console} from "forge-std/console.sol";
+import {Script} from "forge-std/Script.sol";
 
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {Options} from "openzeppelin-foundry-upgrades/Options.sol";

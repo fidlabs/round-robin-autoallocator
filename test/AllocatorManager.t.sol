@@ -4,8 +4,6 @@ pragma solidity =0.8.25;
 import {Test} from "forge-std/Test.sol";
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-
 import {RoundRobinAllocator} from "../src/RoundRobinAllocator.sol";
 
 contract AllocatorManagerTest is Test {

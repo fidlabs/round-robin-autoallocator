@@ -50,6 +50,7 @@ abstract contract Modifiers is Ownable2StepUpgradeable {
     }
 
     modifier onlyEOA() {
+        // solhint-disable-next-line avoid-tx-origin
         if (msg.sender != tx.origin) {
             revert Errors.CallerIsNotEOA();
         }

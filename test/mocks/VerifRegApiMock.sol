@@ -17,6 +17,7 @@ contract VerifRegApiMock {
     event DebugBytes(address indexed client, bytes data);
     event DebugAllocationRequest(address indexed client, bytes[] requests);
 
+    // solhint-disable-next-line no-complex-fallback, payable-fallback
     fallback(bytes calldata data) external returns (bytes memory) {
         (uint256 methodNum,,,, bytes memory raw_request, uint64 target) =
             abi.decode(data, (uint64, uint256, uint64, uint64, bytes, uint64));

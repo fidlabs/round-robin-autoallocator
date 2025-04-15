@@ -2,13 +2,13 @@
 pragma solidity =0.8.25;
 
 import {console} from "forge-std/console.sol";
-import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";
 import {FilAddressIdConverter} from "filecoin-solidity/utils/FilAddressIdConverter.sol";
 
 contract ActorMock {
     error Err();
 
-    fallback(bytes calldata data) external returns (bytes memory) {
+    // solhint-disable-next-line no-complex-fallback, payable-fallback
+    fallback(bytes calldata data) external payable returns (bytes memory) {
         (uint256 methodNum,,,,, uint64 target) = abi.decode(data, (uint64, uint256, uint64, uint64, bytes, uint64));
 
         console.log("ActorMock: methodNum: %s, target: %s", methodNum, target);
@@ -22,6 +22,7 @@ contract ActorMock {
             revert Err();
         }
 
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory retData) = _actor.call(data);
         if (!success) revert Err();
         return retData;

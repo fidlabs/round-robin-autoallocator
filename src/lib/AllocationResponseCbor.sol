@@ -3,6 +3,7 @@ pragma solidity =0.8.25;
 
 import {CBORDecoder} from "filecoin-solidity/utils/CborDecode.sol";
 import {DataCapTypes} from "filecoin-solidity/types/DataCapTypes.sol";
+import {Errors} from "./Errors.sol";
 
 library AllocationResponseCbor {
     /**
@@ -27,20 +28,26 @@ library AllocationResponseCbor {
         // Read the top-level array.
         (topArrayLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
         // Expect exactly 3 elements.
-        require(topArrayLength == 3, "Invalid top-level array length");
+        if (topArrayLength != 3) {
+            revert Errors.InvalidTopLevelArray();
+        }
 
         // First element: [1, []]
         // allocation_results: [newAllocations, [?]]
         {
             uint256 firstElemLength;
             (firstElemLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
-            require(firstElemLength == 2, "Invalid first element length");
+            if (firstElemLength != 2) {
+                revert Errors.InvalidFirstElement();
+            }
             // First sub-element
             (, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
             // Second sub-element
             uint256 innerLength;
             (innerLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
-            require(innerLength == 0, "Expected empty array in first element");
+            if (innerLength != 0) {
+                revert Errors.InvalidFirstElement();
+            }
         }
 
         // Second element: [0, []]
@@ -48,13 +55,17 @@ library AllocationResponseCbor {
         {
             uint256 secondElemLength;
             (secondElemLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
-            require(secondElemLength == 2, "Invalid second element length");
+            if (secondElemLength != 2) {
+                revert Errors.InvalidSecondElement();
+            }
             // First sub-element, extension are not supported atm so we ignore it
             (, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
             // Second sub-element
             uint256 innerLength;
             (innerLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
-            require(innerLength == 0, "Expected empty array in second element");
+            if (innerLength != 0) {
+                revert Errors.InvalidSecondElement();
+            }
         }
 
         // third element: the allocation IDs array
