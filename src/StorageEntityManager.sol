@@ -27,32 +27,35 @@ abstract contract StorageEntityManager is Modifiers {
     );
     event StorageEntityActiveStatusChanged(address indexed creator, address indexed storageEntity, bool isActive);
 
-    function createStorageEntity(address owner, uint64[] calldata storageProviders) public onlyOwnerOrAllocator {
-        if (Storage.s().storageEntities[owner].owner != address(0)) {
+    function createStorageEntity(address entityOwner, uint64[] calldata storageProviders) public onlyOwnerOrAllocator {
+        if (Storage.s().storageEntities[entityOwner].owner != address(0)) {
             revert Errors.StorageEntityAlreadyExists();
         }
         _ensureNoStorageProviderUsed(storageProviders);
 
         // Create a new storage entity
-        Storage.StorageEntity storage storageEntity = Storage.s().storageEntities[owner];
-        storageEntity.owner = owner;
+        Storage.StorageEntity storage storageEntity = Storage.s().storageEntities[entityOwner];
+        storageEntity.owner = entityOwner;
         storageEntity.storageProviders = storageProviders;
         storageEntity.isActive = true;
 
-        Storage.s().entityAddresses.push(owner);
+        Storage.s().entityAddresses.push(entityOwner);
 
         // Mark each storage provider as used
         for (uint256 i = 0; i < storageProviders.length; i++) {
             Storage.s().usedStorageProviders[storageProviders[i]] = true;
         }
 
-        emit StorageEntityCreated(msg.sender, owner, storageProviders);
+        emit StorageEntityCreated(msg.sender, entityOwner, storageProviders);
     }
 
-    function addStorageProviders(address owner, uint64[] calldata storageProviders) public onlyStorageEntity(owner) {
+    function addStorageProviders(address entityOwner, uint64[] calldata storageProviders)
+        public
+        onlyStorageEntity(entityOwner)
+    {
         _ensureNoStorageProviderUsed(storageProviders);
 
-        Storage.StorageEntity storage se = Storage.s().storageEntities[owner];
+        Storage.StorageEntity storage se = Storage.s().storageEntities[entityOwner];
 
         _ensureStorageEntityNotExists(se);
 
@@ -61,14 +64,14 @@ abstract contract StorageEntityManager is Modifiers {
             Storage.s().usedStorageProviders[storageProviders[i]] = true;
         }
 
-        emit StrorageProvidersAdded(msg.sender, owner, storageProviders);
+        emit StrorageProvidersAdded(msg.sender, entityOwner, storageProviders);
     }
 
-    function removeStorageProviders(address owner, uint64[] calldata storageProviders)
+    function removeStorageProviders(address entityOwner, uint64[] calldata storageProviders)
         public
-        onlyStorageEntity(owner)
+        onlyStorageEntity(entityOwner)
     {
-        Storage.StorageEntity storage se = Storage.s().storageEntities[owner];
+        Storage.StorageEntity storage se = Storage.s().storageEntities[entityOwner];
 
         _ensureStorageEntityNotExists(se);
 
@@ -85,17 +88,20 @@ abstract contract StorageEntityManager is Modifiers {
             }
         }
 
-        emit StorageProviderRemoved(msg.sender, owner, storageProviders);
+        emit StorageProviderRemoved(msg.sender, entityOwner, storageProviders);
     }
 
-    function changeStorageEntityActiveStatus(address owner, bool isActive) public onlyStorageEntity(owner) {
-        Storage.StorageEntity storage se = Storage.s().storageEntities[owner];
+    function changeStorageEntityActiveStatus(address entityOwner, bool isActive)
+        public
+        onlyStorageEntity(entityOwner)
+    {
+        Storage.StorageEntity storage se = Storage.s().storageEntities[entityOwner];
 
         _ensureStorageEntityNotExists(se);
 
         se.isActive = isActive;
 
-        emit StorageEntityActiveStatusChanged(msg.sender, owner, isActive);
+        emit StorageEntityActiveStatusChanged(msg.sender, entityOwner, isActive);
     }
 
     function _ensureNoStorageProviderUsed(uint64[] calldata storageProviders) internal view {
@@ -112,8 +118,8 @@ abstract contract StorageEntityManager is Modifiers {
         }
     }
 
-    function getStorageEntity(address owner) public view returns (Storage.StorageEntity memory) {
-        return Storage.s().storageEntities[owner];
+    function getStorageEntity(address entityOwner) public view returns (Storage.StorageEntity memory) {
+        return Storage.s().storageEntities[entityOwner];
     }
 
     function isStorageProviderUsed(uint64 storageProvider) public view returns (bool) {

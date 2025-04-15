@@ -244,7 +244,7 @@ contract RoundRobinAllocator is
      * @dev Reverts if trying to receive invalid token
      * @dev Reverts if trying to send a unsupported token
      */
-    // solhint-disable func-name-mixedcase
+    // slither-disable-next-line naming-convention
     function handle_filecoin_method(uint64 method, uint64 inputCodec, bytes calldata params)
         external
         view

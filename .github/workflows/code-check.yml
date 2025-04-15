@@ -50,10 +50,9 @@ jobs:
       - name: Install lcov
         run: sudo apt-get -y install lcov
 
-      # Uncomment the following lines after running the command locally
-      # - name: Run Forge fmt check
-      #   run: |
-      #     forge fmt --check
+      - name: Run Forge fmt check
+        run: |
+          forge fmt --check
 
       - name: Run Forge build
         run: |

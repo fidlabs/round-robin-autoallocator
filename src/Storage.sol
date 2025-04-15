@@ -9,7 +9,8 @@ pragma solidity =0.8.25;
  */
 library Storage {
     // keccak256(abi.encode(uint256(keccak256("roundrobinallocator.app.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant APP_STORAGE = 0xa65e097788136ac6708a8b2dc691e4beb32762623723cd0f224c6a07a4075100;
+    bytes32 private constant APP_STORAGE =
+        0xa65e097788136ac6708a8b2dc691e4beb32762623723cd0f224c6a07a4075100;
     uint256 private constant APP_CONFIG_SLOT = 0;
 
     // Main storage struct for the RoundRobinAllocator contract.
@@ -51,9 +52,11 @@ library Storage {
      * @dev Returns a pointer to the storage namespace.
      */
     function _getAppStorage() private pure returns (AppStorage storage $) {
+        // slither-disable-start assembly-usage
         assembly {
             $.slot := APP_STORAGE
         }
+        // slither-disable-end assembly-usage
     }
 
     /**
@@ -66,8 +69,8 @@ library Storage {
     /**
      * @dev Sets the application configuration.
      */
-    function setAppConfig(AppConfig memory _appConfig) internal {
-        s().appConfig[APP_CONFIG_SLOT] = _appConfig;
+    function setAppConfig(AppConfig memory appConfig) internal {
+        s().appConfig[APP_CONFIG_SLOT] = appConfig;
     }
 
     /**
