@@ -9,8 +9,7 @@ pragma solidity =0.8.25;
  */
 library Storage {
     // keccak256(abi.encode(uint256(keccak256("roundrobinallocator.app.storage")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant APP_STORAGE =
-        0xa65e097788136ac6708a8b2dc691e4beb32762623723cd0f224c6a07a4075100;
+    bytes32 private constant APP_STORAGE = 0xa65e097788136ac6708a8b2dc691e4beb32762623723cd0f224c6a07a4075100;
     uint256 private constant APP_CONFIG_SLOT = 0;
 
     // Main storage struct for the RoundRobinAllocator contract.
