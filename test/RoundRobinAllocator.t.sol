@@ -9,7 +9,8 @@ import {ActorMock} from "./mocks/ActorMock.sol";
 import {StorageMock} from "./mocks/StorageMock.sol";
 import {FilAddressIdConverter} from "filecoin-solidity/utils/FilAddressIdConverter.sol";
 import {ConstantMock} from "./mocks/ConstantMock.sol";
-import {Errors} from "../src/lib/Errors.sol";
+import {ErrorLib} from "../src/lib/Errors.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract RoundRobinAllocatorTest is Test {
     RoundRobinAllocator public roundRobinAllocator;
@@ -23,8 +24,7 @@ contract RoundRobinAllocatorTest is Test {
     address public constant verifRegContract = address(FilAddressIdConverter.VERIFIED_REGISTRY_ACTOR);
 
     function setUp() public {
-        roundRobinAllocator = new RoundRobinAllocator();
-        roundRobinAllocator.initialize(address(this));
+        roundRobinAllocator = _deployRoundRobinAllocator();
 
         address storageMockAddr = ConstantMock.getSaltMockAddress();
         vm.etch(storageMockAddr, type(StorageMock).runtimeCode);
@@ -48,6 +48,13 @@ contract RoundRobinAllocatorTest is Test {
 
         // make sure we are able to get blockhash - 5
         vm.roll(100);
+    }
+
+    function _deployRoundRobinAllocator() internal returns (RoundRobinAllocator) {
+        RoundRobinAllocator allocator = new RoundRobinAllocator();
+        bytes memory initData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this));
+        ERC1967Proxy proxy = new ERC1967Proxy(address(allocator), initData);
+        return RoundRobinAllocator(address(proxy));
     }
 
     function test_singleAllocate() public {
@@ -118,7 +125,7 @@ contract RoundRobinAllocatorTest is Test {
         AllocationPackageReturn memory allocRet = roundRobinAllocator.getAllocationPackage(packageId);
         assertEq(allocRet.claimed, true);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CollateralAlreadyClaimed.selector));
         roundRobinAllocator.claim(packageId);
     }
 
@@ -139,14 +146,14 @@ contract RoundRobinAllocatorTest is Test {
     }
 
     function test_singleClaimRevert() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidClaim.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidClaim.selector));
         roundRobinAllocator.claim(123123);
     }
 
     function test_allocateEmptyRequestRevert() public {
         AllocationRequest[] memory requests = new AllocationRequest[](0);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidAllocationRequest.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidAllocationRequest.selector));
         roundRobinAllocator.allocate(1, requests);
     }
 
@@ -157,10 +164,10 @@ contract RoundRobinAllocatorTest is Test {
             size: 2048
         });
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidReplicaSize.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidReplicaSize.selector));
         roundRobinAllocator.allocate(0, requests);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidReplicaSize.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidReplicaSize.selector));
         roundRobinAllocator.allocate(4, requests);
     }
 
@@ -171,12 +178,12 @@ contract RoundRobinAllocatorTest is Test {
             size: 2048
         });
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.NotEnoughAllocationData.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.NotEnoughAllocationData.selector));
         roundRobinAllocator.allocate(1, requests);
     }
 
     function test_getAllocationPackageRevert() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidPackageId.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidPackageId.selector));
         roundRobinAllocator.getAllocationPackage(123123);
     }
 }
