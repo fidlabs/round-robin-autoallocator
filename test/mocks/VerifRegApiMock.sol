@@ -16,6 +16,7 @@ contract VerifRegApiMock {
     function getStorageMock() internal pure returns (StorageMock) {
         return StorageMock(ConstantMock.getSaltMockAddress());
     }
+
     event DebugBytes(address indexed client, bytes data);
     event DebugAllocationRequest(address indexed client, bytes[] requests);
 

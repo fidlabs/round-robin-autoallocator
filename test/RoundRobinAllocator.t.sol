@@ -29,7 +29,7 @@ contract RoundRobinAllocatorTest is Test {
         address storageMockAddr = ConstantMock.getSaltMockAddress();
         vm.etch(storageMockAddr, type(StorageMock).runtimeCode);
         storageMock = StorageMock(storageMockAddr);
-    
+
         dataCapApiMock = new DataCapApiMock();
         verifRegApiMock = new VerifRegApiMock();
         actorMock = new ActorMock();

@@ -12,18 +12,13 @@ library ConstantMock {
         return computeCreate2Address(FIXED_DEPLOYER, SALT_MOCK, type(StorageMock).creationCode);
     }
 
-    function computeCreate2Address(
-        address deployer,
-        bytes32 salt,
-        bytes memory bytecode
-    ) internal pure returns (address) {
+    function computeCreate2Address(address deployer, bytes32 salt, bytes memory bytecode)
+        internal
+        pure
+        returns (address)
+    {
         bytes32 bytecodeHash = keccak256(bytecode);
-        bytes32 hash = keccak256(abi.encodePacked(
-            bytes1(0xff),
-            deployer,
-            salt,
-            bytecodeHash
-        ));
+        bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), deployer, salt, bytecodeHash));
         return address(uint160(uint256(hash)));
     }
 }
