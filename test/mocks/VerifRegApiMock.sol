@@ -4,16 +4,18 @@ pragma solidity =0.8.25;
 import {console} from "forge-std/Test.sol";
 import {VerifRegTypes} from "filecoin-solidity/types/VerifRegTypes.sol";
 import {StorageMock} from "./StorageMock.sol";
-import {SALT_MOCK_ADDRESS} from "./ConstantMock.sol";
+import {ConstantMock} from "./ConstantMock.sol";
 import {Misc} from "filecoin-solidity/utils/Misc.sol";
 import {ClaimCborTest} from "../lib/ClaimCborTest.sol";
 import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";
+import {StorageMock} from "./StorageMock.sol";
 
 contract VerifRegApiMock {
     error Err();
 
-    StorageMock public constant storageMock = StorageMock(SALT_MOCK_ADDRESS);
-
+    function getStorageMock() internal pure returns (StorageMock) {
+        return StorageMock(ConstantMock.getSaltMockAddress());
+    }
     event DebugBytes(address indexed client, bytes data);
     event DebugAllocationRequest(address indexed client, bytes[] requests);
 
@@ -38,7 +40,7 @@ contract VerifRegApiMock {
 
                 console.log("VerifRegApiMock: claim", claim_id);
 
-                bool isSet = storageMock.isAllocationProviderSet(provider, claim_id);
+                bool isSet = getStorageMock().isAllocationProviderSet(provider, claim_id);
 
                 if (isSet) {
                     success_count++;

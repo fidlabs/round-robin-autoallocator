@@ -6,9 +6,9 @@ import {RoundRobinAllocator, AllocationRequest, AllocationPackageReturn} from ".
 import {DataCapApiMock} from "./mocks/DataCapApiMock.sol";
 import {VerifRegApiMock} from "./mocks/VerifRegApiMock.sol";
 import {ActorMock} from "./mocks/ActorMock.sol";
-import {StorageMock, SALT_MOCK} from "./mocks/StorageMock.sol";
+import {StorageMock} from "./mocks/StorageMock.sol";
 import {FilAddressIdConverter} from "filecoin-solidity/utils/FilAddressIdConverter.sol";
-import {SALT_MOCK_ADDRESS} from "./mocks/ConstantMock.sol";
+import {ConstantMock} from "./mocks/ConstantMock.sol";
 import {Errors} from "../src/lib/Errors.sol";
 
 contract RoundRobinAllocatorTest is Test {
@@ -25,8 +25,11 @@ contract RoundRobinAllocatorTest is Test {
     function setUp() public {
         roundRobinAllocator = new RoundRobinAllocator();
         roundRobinAllocator.initialize(address(this));
-        storageMock = new StorageMock{salt: SALT_MOCK}();
-        assertEq(address(storageMock), address(SALT_MOCK_ADDRESS));
+
+        address storageMockAddr = ConstantMock.getSaltMockAddress();
+        vm.etch(storageMockAddr, type(StorageMock).runtimeCode);
+        storageMock = StorageMock(storageMockAddr);
+    
         dataCapApiMock = new DataCapApiMock();
         verifRegApiMock = new VerifRegApiMock();
         actorMock = new ActorMock();

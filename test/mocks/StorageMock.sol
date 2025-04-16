@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-bytes32 constant SALT_MOCK = 0x1718932719327103279810329817320918320918320918320930918320918321;
-
 /**
  * @notice vm.etch mocked contract CANNOT change its storage
  * unfotunately, we need to use separate contract to store anything between calls
