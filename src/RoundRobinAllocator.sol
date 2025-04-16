@@ -15,7 +15,7 @@ import {VerifRegAPI} from "filecoin-solidity/VerifRegAPI.sol";
 import {BigInts} from "filecoin-solidity/utils/BigInts.sol";
 import {FilAddresses} from "filecoin-solidity/utils/FilAddresses.sol";
 
-import {Errors} from "./lib/Errors.sol";
+import {ErrorLib} from "./lib/Errors.sol";
 import {
     AllocationRequestCbor, AllocationRequestData, ProviderAllocationPayload
 } from "./lib/AllocationRequestCbor.sol";
@@ -69,8 +69,7 @@ contract RoundRobinAllocator is
         uint64 indexed provider,
         uint256 indexed packageId,
         uint256 allocationSize,
-        uint64[] allocationIds,
-        uint256 collateral
+        uint64[] allocationIds
     );
     event AllocationClaimed(
         address indexed client, uint256 indexed packageId, uint64 indexed provider, uint64[] allocationIds
@@ -80,6 +79,10 @@ contract RoundRobinAllocator is
     event DebugBytes(address indexed client, bytes data);
     event DebugUint(address indexed client, uint256 data);
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     function initialize(address initialOwner) public initializer {
@@ -88,29 +91,30 @@ contract RoundRobinAllocator is
         __UUPSUpgradeable_init();
         __Pausable_init();
 
-        Storage.AppConfig memory appConfig;
-        appConfig.minReplicas = 1;
-        appConfig.maxReplicas = 3;
-        appConfig.collateralPerCID = 1 * 10 ** 18;
-        appConfig.minRequiredStorageProviders = 3;
+        Storage.AppConfig memory appConfig = Storage.AppConfig({
+            minReplicas: 1,
+            maxReplicas: 3,
+            collateralPerCID: 1 * 10 ** 18,
+            minRequiredStorageProviders: 3
+        });
 
         Storage.setAppConfig(appConfig);
     }
 
     function renounceOwnership() public view override onlyOwner {
-        revert Errors.OwnershipCannotBeRenounced();
+        revert ErrorLib.OwnershipCannotBeRenounced();
     }
 
     function allocate(uint256 replicaSize, AllocationRequest[] calldata allocReq) public payable returns (uint256) {
         if (allocReq.length == 0) {
-            revert Errors.InvalidAllocationRequest();
+            revert ErrorLib.InvalidAllocationRequest();
         }
         Storage.AppConfig memory appConfig = Storage.getAppConfig();
         if (replicaSize < appConfig.minReplicas || replicaSize > appConfig.maxReplicas) {
-            revert Errors.InvalidReplicaSize();
+            revert ErrorLib.InvalidReplicaSize();
         }
         if (allocReq.length * replicaSize < appConfig.minRequiredStorageProviders) {
-            revert Errors.NotEnoughAllocationData();
+            revert ErrorLib.NotEnoughAllocationData();
         }
         // uint requiredCollateral = appConfig.collateralPerCID *
         //     allocReq.length *
@@ -148,15 +152,13 @@ contract RoundRobinAllocator is
             package.spAllocationIds[providerPayloads[i].provider] = allocationIds;
 
             if (allocationIds.length != providerPayloads[i].count) {
-                revert Errors.AllocationFailed();
+                revert ErrorLib.AllocationFailed();
             }
 
-            emit AllocationCreated(
-                msg.sender, providerPayloads[i].provider, packageId, amount, allocationIds, msg.value
-            );
+            emit AllocationCreated(msg.sender, providerPayloads[i].provider, packageId, amount, allocationIds);
 
             if (exit_code != 0) {
-                revert Errors.DataCapTransferFailed();
+                revert ErrorLib.DataCapTransferFailed();
             }
         }
 
@@ -167,10 +169,10 @@ contract RoundRobinAllocator is
         Storage.AllocationPackage storage package = Storage.s().allocationPackages[packageId];
 
         if (package.client == address(0) || package.storageProviders.length == 0) {
-            revert Errors.InvalidClaim();
+            revert ErrorLib.InvalidClaim();
         }
         if (package.claimed) {
-            revert Errors.CollateralAlreadyClaimed();
+            revert ErrorLib.CollateralAlreadyClaimed();
         }
         package.claimed = true;
 
@@ -186,12 +188,12 @@ contract RoundRobinAllocator is
             (int256 exit_code, VerifRegTypes.GetClaimsReturn memory result) = VerifRegAPI.getClaims(params);
 
             if (exit_code != 0) {
-                revert Errors.GetClaimsFailed();
+                revert ErrorLib.GetClaimsFailed();
             }
 
             // https://github.com/filecoin-project/builtin-actors/blob/5aad41bfa29d8eab78f91eb5c82a03466c6062d2/actors/verifreg/src/lib.rs#L505-L506
             if (result.batch_info.success_count != allocationIds.length) {
-                revert Errors.IncompleteProviderClaims(provider);
+                revert ErrorLib.IncompleteProviderClaims(provider);
             }
 
             emit AllocationClaimed(package.client, packageId, provider, allocationIds);
@@ -213,7 +215,7 @@ contract RoundRobinAllocator is
         Storage.AllocationPackage storage package = Storage.s().allocationPackages[packageId];
 
         if (package.client == address(0)) {
-            revert Errors.InvalidPackageId();
+            revert ErrorLib.InvalidPackageId();
         }
 
         ret.client = package.client;
@@ -249,19 +251,19 @@ contract RoundRobinAllocator is
         returns (uint32 exitCode, uint64 codec, bytes memory data)
     {
         if (msg.sender != _DATACAP_ADDRESS) {
-            revert Errors.InvalidCaller(msg.sender, _DATACAP_ADDRESS);
+            revert ErrorLib.InvalidCaller(msg.sender, _DATACAP_ADDRESS);
         }
         CommonTypes.UniversalReceiverParams memory receiverParams =
             UtilsHandlers.handleFilecoinMethod(method, inputCodec, params);
         if (receiverParams.type_ != _FRC46_TOKEN_TYPE) {
-            revert Errors.UnsupportedType();
+            revert ErrorLib.UnsupportedType();
         }
         (uint256 tokenReceivedLength, uint256 byteIdx) = CBORDecoder.readFixedArray(receiverParams.payload, 0);
-        if (tokenReceivedLength != 6) revert Errors.InvalidTokenReceived();
+        if (tokenReceivedLength != 6) revert ErrorLib.InvalidTokenReceived();
         uint64 from;
         (from, byteIdx) = CBORDecoder.readUInt64(receiverParams.payload, byteIdx); // payload == FRC46TokenReceived
         if (from != CommonTypes.FilActorId.unwrap(DataCapTypes.ActorID)) {
-            revert Errors.UnsupportedToken();
+            revert ErrorLib.UnsupportedToken();
         }
         exitCode = 0;
         codec = 0;

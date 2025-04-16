@@ -3,7 +3,7 @@ pragma solidity =0.8.25;
 
 import {CBORDecoder} from "filecoin-solidity/utils/CborDecode.sol";
 import {DataCapTypes} from "filecoin-solidity/types/DataCapTypes.sol";
-import {Errors} from "./Errors.sol";
+import {ErrorLib} from "./Errors.sol";
 
 library AllocationResponseCbor {
     /**
@@ -29,7 +29,7 @@ library AllocationResponseCbor {
         (topArrayLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
         // Expect exactly 3 elements.
         if (topArrayLength != 3) {
-            revert Errors.InvalidTopLevelArray();
+            revert ErrorLib.InvalidTopLevelArray();
         }
 
         // First element: [1, []]
@@ -38,7 +38,7 @@ library AllocationResponseCbor {
             uint256 firstElemLength;
             (firstElemLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
             if (firstElemLength != 2) {
-                revert Errors.InvalidFirstElement();
+                revert ErrorLib.InvalidFirstElement();
             }
             // First sub-element
             (, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
@@ -46,7 +46,7 @@ library AllocationResponseCbor {
             uint256 innerLength;
             (innerLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
             if (innerLength != 0) {
-                revert Errors.InvalidFirstElement();
+                revert ErrorLib.InvalidFirstElement();
             }
         }
 
@@ -56,7 +56,7 @@ library AllocationResponseCbor {
             uint256 secondElemLength;
             (secondElemLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
             if (secondElemLength != 2) {
-                revert Errors.InvalidSecondElement();
+                revert ErrorLib.InvalidSecondElement();
             }
             // First sub-element, extension are not supported atm so we ignore it
             (, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
@@ -64,7 +64,7 @@ library AllocationResponseCbor {
             uint256 innerLength;
             (innerLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
             if (innerLength != 0) {
-                revert Errors.InvalidSecondElement();
+                revert ErrorLib.InvalidSecondElement();
             }
         }
 

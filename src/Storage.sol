@@ -51,7 +51,6 @@ library Storage {
      * @dev Returns a pointer to the storage namespace.
      */
     function _getAppStorage() private pure returns (AppStorage storage $) {
-        // slither-disable-next-line assembly-usage
         // solhint-disable-next-line no-inline-assembly
         assembly {
             $.slot := APP_STORAGE

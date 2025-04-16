@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-library Errors {
+library ErrorLib {
     // @dev Error thrown when renounceOwnership is called
     // 0x2fab92ca
     error OwnershipCannotBeRenounced();

@@ -3,7 +3,7 @@ pragma solidity =0.8.25;
 
 import {Storage} from "./Storage.sol";
 import {Modifiers} from "./Modifiers.sol";
-import {Errors} from "./lib/Errors.sol";
+import {ErrorLib} from "./lib/Errors.sol";
 
 /**
  * @title
@@ -29,7 +29,7 @@ abstract contract StorageEntityManager is Modifiers {
 
     function createStorageEntity(address entityOwner, uint64[] calldata storageProviders) public onlyOwnerOrAllocator {
         if (Storage.s().storageEntities[entityOwner].owner != address(0)) {
-            revert Errors.StorageEntityAlreadyExists();
+            revert ErrorLib.StorageEntityAlreadyExists();
         }
         _ensureNoStorageProviderUsed(storageProviders);
 
@@ -107,14 +107,14 @@ abstract contract StorageEntityManager is Modifiers {
     function _ensureNoStorageProviderUsed(uint64[] calldata storageProviders) internal view {
         for (uint256 i = 0; i < storageProviders.length; i++) {
             if (Storage.s().usedStorageProviders[storageProviders[i]]) {
-                revert Errors.StorageProviderAlreadyUsed();
+                revert ErrorLib.StorageProviderAlreadyUsed();
             }
         }
     }
 
     function _ensureStorageEntityNotExists(Storage.StorageEntity storage se) internal view {
         if (se.owner == address(0)) {
-            revert Errors.StorageEntityDoesNotExist();
+            revert ErrorLib.StorageEntityDoesNotExist();
         }
     }
 

@@ -4,7 +4,7 @@ pragma solidity =0.8.25;
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import {Storage} from "./Storage.sol";
-import {Errors} from "./lib/Errors.sol";
+import {ErrorLib} from "./lib/Errors.sol";
 
 /**
  * @notice Helper contract for shared modifiers
@@ -21,7 +21,7 @@ abstract contract Modifiers is Ownable2StepUpgradeable {
                 }
             }
             if (!isAlloc) {
-                revert Errors.CallerIsNotOwnerOrAllocator();
+                revert ErrorLib.CallerIsNotOwnerOrAllocator();
             }
         }
         _;
@@ -37,14 +37,14 @@ abstract contract Modifiers is Ownable2StepUpgradeable {
             }
         }
         if (!isAlloc) {
-            revert Errors.CallerIsNotAllocator();
+            revert ErrorLib.CallerIsNotAllocator();
         }
         _;
     }
 
     modifier onlyStorageEntity(address storageEntity) {
         if (msg.sender != storageEntity) {
-            revert Errors.CallerIsNotStorageEntity();
+            revert ErrorLib.CallerIsNotStorageEntity();
         }
         _;
     }
@@ -52,7 +52,7 @@ abstract contract Modifiers is Ownable2StepUpgradeable {
     modifier onlyEOA() {
         // solhint-disable-next-line avoid-tx-origin
         if (msg.sender != tx.origin) {
-            revert Errors.CallerIsNotEOA();
+            revert ErrorLib.CallerIsNotEOA();
         }
         _;
     }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import "./StorageMock.sol";
+import {StorageMock} from "./StorageMock.sol";
 
 library ConstantMock {
     address public constant FIXED_DEPLOYER = 0x000000000000000000000000000000000000dEaD;
