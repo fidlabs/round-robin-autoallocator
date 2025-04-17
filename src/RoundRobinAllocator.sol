@@ -16,12 +16,14 @@ import {BigInts} from "filecoin-solidity/utils/BigInts.sol";
 import {FilAddresses} from "filecoin-solidity/utils/FilAddresses.sol";
 
 import {ErrorLib} from "./lib/Errors.sol";
+import {Events} from "./lib/Events.sol";
 import {
     AllocationRequestCbor, AllocationRequestData, ProviderAllocationPayload
 } from "./lib/AllocationRequestCbor.sol";
 import {AllocationResponseCbor} from "./lib/AllocationResponseCbor.sol";
 import {Storage} from "./Storage.sol";
 import {AllocatorManager} from "./AllocatorManager.sol";
+import {OwnerManager} from "./OwnerManager.sol";
 import {StorageEntityManager} from "./StorageEntityManager.sol";
 import {StorageEntityPicker} from "./StorageEntityPicker.sol";
 
@@ -55,7 +57,8 @@ contract RoundRobinAllocator is
     PausableUpgradeable,
     AllocatorManager,
     StorageEntityManager,
-    StorageEntityPicker
+    StorageEntityPicker,
+    OwnerManager
 {
     using AllocationRequestCbor for AllocationRequestData[];
     using AllocationRequestCbor for AllocationRequest[];
@@ -64,38 +67,38 @@ contract RoundRobinAllocator is
     uint32 constant _FRC46_TOKEN_TYPE = 2233613279;
     address private constant _DATACAP_ADDRESS = address(0xfF00000000000000000000000000000000000007);
 
-    event AllocationCreated(
-        address indexed client,
-        uint64 indexed provider,
-        uint256 indexed packageId,
-        uint256 allocationSize,
-        uint64[] allocationIds
-    );
-    event AllocationClaimed(
-        address indexed client, uint256 indexed packageId, uint64 indexed provider, uint64[] allocationIds
-    );
-
-    // TODO: remove me b4 prod
-    event DebugBytes(address indexed client, bytes data);
-    event DebugUint(address indexed client, uint256 data);
-
     constructor() {
         _disableInitializers();
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    function initialize(address initialOwner) public initializer {
+    function initialize(address initialOwner, uint256 collateralPerCID, uint256 minRequiredStorageProviders)
+        public
+        initializer
+    {
         __Ownable2Step_init();
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
         __Pausable_init();
 
+        uint256 maxReplicas = 3;
+
+        if (collateralPerCID == 0) {
+            revert Errors.InvalidCollateralPerCID();
+        }
+        if (minRequiredStorageProviders < 2) {
+            revert Errors.InvalidMinRequiredStorageProviders();
+        }
+        if (minRequiredStorageProviders < maxReplicas) {
+            revert Errors.InvalidMinRequiredStorageProviders();
+        }
+
         Storage.AppConfig memory appConfig = Storage.AppConfig({
             minReplicas: 1,
-            maxReplicas: 3,
-            collateralPerCID: 1 * 10 ** 18,
-            minRequiredStorageProviders: 3
+            maxReplicas: maxReplicas,
+            collateralPerCID: collateralPerCID,
+            minRequiredStorageProviders: minRequiredStorageProviders
         });
 
         Storage.setAppConfig(appConfig);
@@ -105,7 +108,21 @@ contract RoundRobinAllocator is
         revert ErrorLib.OwnershipCannotBeRenounced();
     }
 
-    function allocate(uint256 replicaSize, AllocationRequest[] calldata allocReq) public payable returns (uint256) {
+    function getAppConfig() external view returns (Storage.AppConfig memory appConfig) {
+        appConfig = Storage.getAppConfig();
+    }
+
+    function allocate(uint256 replicaSize, AllocationRequest[] calldata allocReq)
+        external
+        payable
+        whenNotPaused
+        onlyEOA
+        returns (uint256)
+    {
+        return _allocate(replicaSize, allocReq);
+    }
+
+    function _allocate(uint256 replicaSize, AllocationRequest[] calldata allocReq) internal returns (uint256) {
         if (allocReq.length == 0) {
             revert ErrorLib.InvalidAllocationRequest();
         }
@@ -116,12 +133,10 @@ contract RoundRobinAllocator is
         if (allocReq.length * replicaSize < appConfig.minRequiredStorageProviders) {
             revert ErrorLib.NotEnoughAllocationData();
         }
-        // uint requiredCollateral = appConfig.collateralPerCID *
-        //     allocReq.length *
-        //     replicaSize;
-        // if (msg.value < requiredCollateral) {
-        //     revert Errors.InsufficientCollateral(requiredCollateral);
-        // }
+        uint256 requiredCollateral = appConfig.collateralPerCID * allocReq.length * replicaSize;
+        if (msg.value < requiredCollateral) {
+            revert Errors.InsufficientCollateral(requiredCollateral);
+        }
 
         uint64[] memory providers = _pickStorageProviders(appConfig.minRequiredStorageProviders);
 
@@ -135,8 +150,6 @@ contract RoundRobinAllocator is
         Storage.s().clientAllocationPackages[msg.sender].push(packageId);
 
         Storage.AllocationPackage storage package = Storage.s().allocationPackages[packageId];
-        package.client = msg.sender;
-        package.storageProviders = providers;
 
         // send data cap separately for each provider so we can track allocation IDs per SP
         for (uint256 i = 0; i < providerPayloads.length; i++) {
@@ -155,17 +168,23 @@ contract RoundRobinAllocator is
                 revert ErrorLib.AllocationFailed();
             }
 
-            emit AllocationCreated(msg.sender, providerPayloads[i].provider, packageId, amount, allocationIds);
+            emit Events.AllocationCreated(msg.sender, providerPayloads[i].provider, packageId, amount, allocationIds);
 
             if (exit_code != 0) {
                 revert ErrorLib.DataCapTransferFailed();
             }
         }
 
+        package.client = msg.sender;
+        package.storageProviders = providers;
+        package.collateral = msg.value;
+
+        emit Events.CollateralLocked(msg.sender, packageId, msg.value);
+
         return packageId;
     }
 
-    function claim(uint256 packageId) public {
+    function claim(uint256 packageId) public whenNotPaused {
         Storage.AllocationPackage storage package = Storage.s().allocationPackages[packageId];
 
         if (package.client == address(0) || package.storageProviders.length == 0) {
@@ -196,8 +215,12 @@ contract RoundRobinAllocator is
                 revert ErrorLib.IncompleteProviderClaims(provider);
             }
 
-            emit AllocationClaimed(package.client, packageId, provider, allocationIds);
+            emit Events.AllocationClaimed(package.client, packageId, provider, allocationIds);
         }
+
+        payable(package.client).transfer(package.collateral);
+
+        emit Events.CollateralReleased(msg.sender, package.client, packageId, package.collateral);
     }
 
     function _allocationIdsToClaimIds(uint64[] memory allocationIds)

@@ -17,9 +17,6 @@ z_notes
 precompiles
 broadcast
 TODO
-fresh.sh
-fresh_claim.sh
-grant_dc.sh
 Makefile
 report
 lcov.info

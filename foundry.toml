@@ -9,6 +9,7 @@ build_info = true
 extra_output = ["storageLayout"]
 optimizer=true
 optimizer_runs=200
+solc_version="0.8.25"
 
 evm_version = "shanghai" # devnet initial deployment fails with newest version, subsequent deployments work..
 

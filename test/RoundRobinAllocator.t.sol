@@ -11,9 +11,20 @@ import {FilAddressIdConverter} from "filecoin-solidity/utils/FilAddressIdConvert
 import {ConstantMock} from "./mocks/ConstantMock.sol";
 import {ErrorLib} from "../src/lib/Errors.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+contract RoundRobinAllocatorWrapper is RoundRobinAllocator {
+    function allocateWrapper(uint256 replicaSize, AllocationRequest[] calldata allocReq)
+        external
+        payable
+        returns (uint256)
+    {
+        return _allocate(replicaSize, allocReq);
+    }
+}
 
 contract RoundRobinAllocatorTest is Test {
-    RoundRobinAllocator public roundRobinAllocator;
+    RoundRobinAllocatorWrapper public roundRobinAllocator;
     DataCapApiMock public dataCapApiMock;
     VerifRegApiMock public verifRegApiMock;
     ActorMock public actorMock;
@@ -22,6 +33,9 @@ contract RoundRobinAllocatorTest is Test {
     address public constant CALL_ACTOR_ID = address(FilAddressIdConverter.CALL_ACTOR_BY_ID);
     address public constant datacapContract = address(FilAddressIdConverter.DATACAP_TOKEN_ACTOR);
     address public constant verifRegContract = address(FilAddressIdConverter.VERIFIED_REGISTRY_ACTOR);
+
+    uint256 public constant COLLATERAL_PER_CID = 1 * 10 ** 18;
+    uint256 public constant MIN_REQ_SP = 3;
 
     function setUp() public {
         roundRobinAllocator = _deployRoundRobinAllocator();
@@ -57,6 +71,28 @@ contract RoundRobinAllocatorTest is Test {
         return RoundRobinAllocator(address(proxy));
     }
 
+    receive() external payable {
+        // This is to prevent the test from failing when claim sends collateral back
+    }
+
+    function _allocateCallAndCheck(uint256 collateralAmount, uint256 replicaSize, AllocationRequest[] memory requests)
+        internal
+        returns (uint256)
+    {
+        uint256 contractBalanceBefore = address(roundRobinAllocator).balance;
+        uint256 testContractBalanceBefore = address(this).balance;
+
+        uint256 packageId = roundRobinAllocator.allocateWrapper{value: collateralAmount}(replicaSize, requests);
+
+        uint256 contractBalanceAfter = address(roundRobinAllocator).balance;
+        uint256 testContractBalanceAfter = address(this).balance;
+
+        assertEq(contractBalanceAfter, contractBalanceBefore + collateralAmount);
+        assertEq(testContractBalanceAfter, testContractBalanceBefore - collateralAmount);
+
+        return packageId;
+    }
+
     function test_singleAllocate() public {
         AllocationRequest[] memory requests = new AllocationRequest[](1);
         requests[0] = AllocationRequest({
@@ -65,7 +101,10 @@ contract RoundRobinAllocatorTest is Test {
         });
 
         uint256 replicaSize = 3;
-        uint256 packageId = roundRobinAllocator.allocate(replicaSize, requests);
+        uint256 collateralAmount = replicaSize * COLLATERAL_PER_CID;
+
+        uint256 packageId = _allocateCallAndCheck(collateralAmount, replicaSize, requests);
+
         AllocationPackageReturn memory allocRet = roundRobinAllocator.getAllocationPackage(packageId);
 
         uint256 expectedAllocCount = requests.length * replicaSize;
@@ -97,7 +136,8 @@ contract RoundRobinAllocatorTest is Test {
         }
 
         uint256 replicaSize = 1;
-        uint256 packageId = roundRobinAllocator.allocate(replicaSize, requests);
+        uint256 collateralAmount = len * replicaSize * COLLATERAL_PER_CID;
+        uint256 packageId = _allocateCallAndCheck(collateralAmount, replicaSize, requests);
         AllocationPackageReturn memory allocRet = roundRobinAllocator.getAllocationPackage(packageId);
 
         uint256 totalAllocationIdCount = 0;
@@ -119,7 +159,8 @@ contract RoundRobinAllocatorTest is Test {
         });
 
         uint256 replicaSize = 3;
-        uint256 packageId = roundRobinAllocator.allocate(replicaSize, requests);
+        uint256 collateralAmount = replicaSize * COLLATERAL_PER_CID;
+        uint256 packageId = _allocateCallAndCheck(collateralAmount, replicaSize, requests);
         roundRobinAllocator.claim(packageId);
 
         AllocationPackageReturn memory allocRet = roundRobinAllocator.getAllocationPackage(packageId);
@@ -140,7 +181,8 @@ contract RoundRobinAllocatorTest is Test {
                 size: 2048
             });
         }
-        uint256 packageId = roundRobinAllocator.allocate(replicaSize, requests);
+        uint256 collateralAmount = allocReqCount * replicaSize * COLLATERAL_PER_CID;
+        uint256 packageId = _allocateCallAndCheck(collateralAmount, replicaSize, requests);
 
         roundRobinAllocator.claim(packageId);
     }
@@ -153,7 +195,7 @@ contract RoundRobinAllocatorTest is Test {
     function test_allocateEmptyRequestRevert() public {
         AllocationRequest[] memory requests = new AllocationRequest[](0);
 
-        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidAllocationRequest.selector));
+        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidAllocationRequest.selector));
         roundRobinAllocator.allocate(1, requests);
     }
 
@@ -165,9 +207,9 @@ contract RoundRobinAllocatorTest is Test {
         });
 
         vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidReplicaSize.selector));
-        roundRobinAllocator.allocate(0, requests);
+        roundRobinAllocator.allocateWrapper(0, requests);
 
-        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidReplicaSize.selector));
+        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidReplicaSize.selector));
         roundRobinAllocator.allocate(4, requests);
     }
 
@@ -178,12 +220,102 @@ contract RoundRobinAllocatorTest is Test {
             size: 2048
         });
 
-        vm.expectRevert(abi.encodeWithSelector(ErrorLib.NotEnoughAllocationData.selector));
+        vm.expectRevert(abi.encodeWithSelector(Errors.NotEnoughAllocationData.selector));
         roundRobinAllocator.allocate(1, requests);
     }
 
     function test_getAllocationPackageRevert() public {
         vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidPackageId.selector));
         roundRobinAllocator.getAllocationPackage(123123);
+    }
+
+    function test_allocateCallerIsNotEOARevert() public {
+        AllocationRequest[] memory requests = new AllocationRequest[](1);
+        requests[0] = AllocationRequest({
+            dataCID: hex"0181e203922020ab68b07850bae544b4e720ff59fdc7de709a8b5a8e83d6b7ab3ac2fa83e8461b",
+            size: 2048
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.CallerIsNotEOA.selector));
+        roundRobinAllocator.allocate(1, requests);
+    }
+
+    function test_emergenctCollateralReleaseSuccess() public {
+        AllocationRequest[] memory requests = new AllocationRequest[](1);
+        requests[0] = AllocationRequest({
+            dataCID: hex"0181e203922020ab68b07850bae544b4e720ff59fdc7de709a8b5a8e83d6b7ab3ac2fa83e8461b",
+            size: 2048
+        });
+
+        uint256 replicaSize = 3;
+        uint256 collateralAmount = replicaSize * COLLATERAL_PER_CID;
+        uint256 packageId = _allocateCallAndCheck(collateralAmount, replicaSize, requests);
+
+        roundRobinAllocator.emergencyCollateralRelease(packageId);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        roundRobinAllocator.claim(packageId);
+    }
+
+    function test_emergencyCollateralReleaseOwnerRevert() public {
+        AllocationRequest[] memory requests = new AllocationRequest[](1);
+        requests[0] = AllocationRequest({
+            dataCID: hex"0181e203922020ab68b07850bae544b4e720ff59fdc7de709a8b5a8e83d6b7ab3ac2fa83e8461b",
+            size: 2048
+        });
+
+        uint256 replicaSize = 3;
+        uint256 collateralAmount = replicaSize * COLLATERAL_PER_CID;
+        uint256 packageId = _allocateCallAndCheck(collateralAmount, replicaSize, requests);
+
+        vm.prank(address(1));
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, address(1)));
+        roundRobinAllocator.emergencyCollateralRelease(packageId);
+    }
+
+    function test_emergencyCollateralReleaseBeforeClaimRevert() public {
+        AllocationRequest[] memory requests = new AllocationRequest[](1);
+        requests[0] = AllocationRequest({
+            dataCID: hex"0181e203922020ab68b07850bae544b4e720ff59fdc7de709a8b5a8e83d6b7ab3ac2fa83e8461b",
+            size: 2048
+        });
+
+        uint256 replicaSize = 3;
+        uint256 collateralAmount = replicaSize * COLLATERAL_PER_CID;
+        uint256 packageId = _allocateCallAndCheck(collateralAmount, replicaSize, requests);
+
+        roundRobinAllocator.emergencyCollateralRelease(packageId);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        roundRobinAllocator.claim(packageId);
+    }
+
+    function test_emergencyCollateralReleaseAfterClaimRevert() public {
+        AllocationRequest[] memory requests = new AllocationRequest[](1);
+        requests[0] = AllocationRequest({
+            dataCID: hex"0181e203922020ab68b07850bae544b4e720ff59fdc7de709a8b5a8e83d6b7ab3ac2fa83e8461b",
+            size: 2048
+        });
+
+        uint256 replicaSize = 3;
+        uint256 collateralAmount = replicaSize * COLLATERAL_PER_CID;
+        uint256 packageId = _allocateCallAndCheck(collateralAmount, replicaSize, requests);
+
+        roundRobinAllocator.claim(packageId);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        roundRobinAllocator.emergencyCollateralRelease(packageId);
+    }
+
+    function test_rraInitializeCollateralRevert() public {
+        RoundRobinAllocator rra = new RoundRobinAllocator();
+        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidCollateralPerCID.selector));
+        rra.initialize(address(this), 0, MIN_REQ_SP);
+    }
+
+    function test_rraInitializeMinStorageProvidersRevert() public {
+        RoundRobinAllocator rra = new RoundRobinAllocator();
+        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidMinRequiredStorageProviders.selector));
+        rra.initialize(address(this), COLLATERAL_PER_CID, 2);
     }
 }

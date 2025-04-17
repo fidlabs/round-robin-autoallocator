@@ -74,7 +74,7 @@ library Storage {
     /**
      * @dev Returns the application configuration.
      */
-    function getAppConfig() internal view returns (AppConfig memory) {
+    function getAppConfig() internal view returns (AppConfig storage) {
         return s().appConfig[APP_CONFIG_SLOT];
     }
 }

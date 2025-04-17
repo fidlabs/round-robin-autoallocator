@@ -7,6 +7,10 @@ import {FilAddressIdConverter} from "filecoin-solidity/utils/FilAddressIdConvert
 contract ActorMock {
     error Err();
 
+    receive() external payable {
+        revert Err();
+    }
+
     // solhint-disable-next-line no-complex-fallback, payable-fallback
     fallback(bytes calldata data) external payable returns (bytes memory) {
         (uint256 methodNum,,,,, uint64 target) = abi.decode(data, (uint64, uint256, uint64, uint64, bytes, uint64));
