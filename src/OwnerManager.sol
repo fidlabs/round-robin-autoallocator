@@ -4,7 +4,7 @@ pragma solidity =0.8.25;
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {Storage} from "./Storage.sol";
-import {Errors} from "./lib/Errors.sol";
+import {ErrorLib} from "./lib/Errors.sol";
 import {Events} from "./lib/Events.sol";
 
 /**
@@ -32,16 +32,16 @@ abstract contract OwnerManager is Ownable2StepUpgradeable, PausableUpgradeable {
         Storage.AllocationPackage storage package = Storage.s().allocationPackages[packageId];
 
         if (package.client == address(0)) {
-            revert Errors.InvalidPackageId();
+            revert ErrorLib.InvalidPackageId();
         }
         if (package.claimed) {
-            revert Errors.CollateralAlreadyClaimed();
+            revert ErrorLib.CollateralAlreadyClaimed();
         }
         package.claimed = true;
         uint256 amount = package.collateral;
 
-        payable(package.client).transfer(amount);
-
         emit Events.CollateralReleased(msg.sender, package.client, packageId, amount);
+
+        payable(package.client).transfer(amount);
     }
 }

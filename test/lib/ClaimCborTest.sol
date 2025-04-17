@@ -8,7 +8,6 @@ import {CBORDecoder} from "filecoin-solidity/utils/CborDecode.sol";
 import {Misc} from "filecoin-solidity/utils/Misc.sol";
 import {Errors} from "filecoin-solidity/utils/Errors.sol";
 import {FilecoinCBOR} from "filecoin-solidity/cbor/FilecoinCbor.sol";
-import {VerifRegCBOR} from "filecoin-solidity/cbor/VerifRegCbor.sol";
 
 library ClaimCborTest {
     using CBOR for CBOR.CBORBuffer;

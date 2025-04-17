@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {AllocationRequestCbor, ProviderAllocationPayload} from "../src/lib/AllocationRequestCbor.sol";
 import {AllocationRequest} from "../src/RoundRobinAllocator.sol";
 
@@ -11,7 +11,7 @@ contract AllocationTestWrapper {
     function encodeAllocations(
         AllocationRequest[] calldata allocReq,
         uint256 replicaSize,
-        uint64[] memory providers,
+        uint64[] calldata providers,
         int64 termMin,
         int64 termMax,
         int64 expiration

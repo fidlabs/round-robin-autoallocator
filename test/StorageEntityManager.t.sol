@@ -4,8 +4,9 @@ pragma solidity =0.8.25;
 import {Test} from "forge-std/Test.sol";
 
 import {Storage} from "../src/Storage.sol";
-import {Errors} from "../src/lib/Errors.sol";
+import {ErrorLib} from "../src/lib/Errors.sol";
 import {RoundRobinAllocator} from "../src/RoundRobinAllocator.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract StorageEntityManagerTest is Test {
     RoundRobinAllocator public roundRobinAllocator;
@@ -14,14 +15,20 @@ contract StorageEntityManagerTest is Test {
     address public seAddress;
 
     function setUp() public {
-        roundRobinAllocator = new RoundRobinAllocator();
-        roundRobinAllocator.initialize(address(this), 1, 3);
+        roundRobinAllocator = _deployRoundRobinAllocator();
 
         aliceAddress = makeAddr("alice");
         allocatorAddress = makeAddr("allocator");
         seAddress = makeAddr("storageEntity");
 
         roundRobinAllocator.addAllocator(allocatorAddress);
+    }
+
+    function _deployRoundRobinAllocator() internal returns (RoundRobinAllocator) {
+        RoundRobinAllocator allocator = new RoundRobinAllocator();
+        bytes memory initData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this), 1, 3);
+        ERC1967Proxy proxy = new ERC1967Proxy(address(allocator), initData);
+        return RoundRobinAllocator(address(proxy));
     }
 
     /**
@@ -49,7 +56,7 @@ contract StorageEntityManagerTest is Test {
 
     function test_createStorageEntityOwnerRevert() public {
         vm.prank(aliceAddress);
-        vm.expectRevert(abi.encodeWithSelector(Errors.CallerIsNotOwnerOrAllocator.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CallerIsNotOwnerOrAllocator.selector));
         roundRobinAllocator.createStorageEntity(aliceAddress, new uint64[](1));
     }
 
@@ -57,7 +64,7 @@ contract StorageEntityManagerTest is Test {
         Storage.StorageEntity memory se = _prepareStorageEntity(address(1), new uint64[](0));
 
         vm.prank(allocatorAddress);
-        vm.expectRevert(abi.encodeWithSelector(Errors.StorageProviderAlreadyUsed.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.StorageProviderAlreadyUsed.selector));
         roundRobinAllocator.createStorageEntity(address(2), se.storageProviders);
     }
 
@@ -101,7 +108,7 @@ contract StorageEntityManagerTest is Test {
         assertEq(storageEntity.storageProviders.length, 1);
 
         vm.prank(aliceAddress);
-        vm.expectRevert(abi.encodeWithSelector(Errors.CallerIsNotStorageEntity.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CallerIsNotStorageEntity.selector));
         roundRobinAllocator.addStorageProviders(address(1), new uint64[](1));
     }
 
@@ -128,7 +135,7 @@ contract StorageEntityManagerTest is Test {
         assertEq(storageEntity.storageProviders.length, 1);
 
         vm.prank(aliceAddress);
-        vm.expectRevert(abi.encodeWithSelector(Errors.CallerIsNotStorageEntity.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CallerIsNotStorageEntity.selector));
         roundRobinAllocator.removeStorageProviders(storageEntity.owner, storageEntity.storageProviders);
     }
 
@@ -170,7 +177,7 @@ contract StorageEntityManagerTest is Test {
         assertEq(storageEntity.isActive, true);
 
         vm.prank(aliceAddress);
-        vm.expectRevert(abi.encodeWithSelector(Errors.CallerIsNotStorageEntity.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CallerIsNotStorageEntity.selector));
         roundRobinAllocator.changeStorageEntityActiveStatus(storageEntity.owner, false);
 
         Storage.StorageEntity memory updatedStorageEntity = roundRobinAllocator.getStorageEntity(storageEntity.owner);

@@ -2,13 +2,14 @@
 pragma solidity =0.8.25;
 
 import {Storage} from "./Storage.sol";
-import {Errors} from "./lib/Errors.sol";
+import {ErrorLib} from "./lib/Errors.sol";
 
 abstract contract StorageEntityPicker {
     /**
      * @param max The maximum number to return
      * @return A semi-random number between 0 and max
      */
+    // slither-disable-next-line weak-prng
     function _getRandomNumber(uint256 max) internal returns (uint256) {
         // two fixed entropy sources
         uint256 past1BlockHash = uint256(blockhash(block.number - 1));
@@ -22,7 +23,7 @@ abstract contract StorageEntityPicker {
         Storage.s().spPickerNonce =
             uint256(keccak256(abi.encodePacked(currentNonce, past1BlockHash, past5BlockHash, prevrandao)));
 
-        // generate random number with multiple entropy sources
+        // generate semi-random number with multiple entropy sources
         uint256 rand = uint256(
             keccak256(abi.encodePacked(past1BlockHash, past5BlockHash, prevrandao, Storage.s().spPickerNonce))
         ) % max;
@@ -39,12 +40,13 @@ abstract contract StorageEntityPicker {
      *
      * @param numEntities The number of storage providers to pick
      */
+    // slither-disable-next-line weak-prng
     function _pickStorageProviders(uint256 numEntities) internal returns (uint64[] memory) {
         address[] storage entityAddresses = Storage.s().entityAddresses;
         uint256 entityLength = entityAddresses.length;
 
         if (entityLength < numEntities) {
-            revert Errors.NotEnoughStorageEntities();
+            revert ErrorLib.NotEnoughStorageEntities();
         }
 
         // Start from a random index
@@ -65,7 +67,7 @@ abstract contract StorageEntityPicker {
         }
 
         if (pickedCount < numEntities) {
-            revert Errors.NotEnoughActiveStorageEntities();
+            revert ErrorLib.NotEnoughActiveStorageEntities();
         }
 
         return storageProviders;

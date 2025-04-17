@@ -13,12 +13,10 @@ docs/
 # Dotenv file
 .env
 
-
 z_notes
 precompiles
 broadcast
 TODO
 Makefile
-slither.config.json
 report
 lcov.info
