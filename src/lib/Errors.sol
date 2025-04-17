@@ -83,4 +83,10 @@ library Errors {
 
     // 0x25a87396
     error InvalidPackageId();
+
+    // 0xc6b1bc18
+    error InvalidCollateralPerCID();
+
+    // 0x453684ba
+    error InvalidMinRequiredStorageProviders();
 }

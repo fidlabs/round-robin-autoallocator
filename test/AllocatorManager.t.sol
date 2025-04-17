@@ -15,7 +15,7 @@ contract AllocatorManagerTest is Test {
 
     function setUp() public {
         roundRobinAllocator = new RoundRobinAllocator();
-        roundRobinAllocator.initialize(address(this));
+        roundRobinAllocator.initialize(address(this), 1, 3);
 
         aliceAddress = makeAddr("alice");
         bobAddress = makeAddr("bob");
