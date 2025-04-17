@@ -64,11 +64,11 @@ contract RoundRobinAllocatorTest is Test {
         vm.roll(100);
     }
 
-    function _deployRoundRobinAllocator() internal returns (RoundRobinAllocator) {
-        RoundRobinAllocator allocator = new RoundRobinAllocator();
-        bytes memory initData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this));
+    function _deployRoundRobinAllocator() internal returns (RoundRobinAllocatorWrapper) {
+        RoundRobinAllocatorWrapper allocator = new RoundRobinAllocatorWrapper();
+        bytes memory initData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this), 1, 3);
         ERC1967Proxy proxy = new ERC1967Proxy(address(allocator), initData);
-        return RoundRobinAllocator(address(proxy));
+        return RoundRobinAllocatorWrapper(address(proxy));
     }
 
     receive() external payable {
@@ -195,8 +195,9 @@ contract RoundRobinAllocatorTest is Test {
     function test_allocateEmptyRequestRevert() public {
         AllocationRequest[] memory requests = new AllocationRequest[](0);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidAllocationRequest.selector));
-        roundRobinAllocator.allocate(1, requests);
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidAllocationRequest.selector));
+        vm.prank(address(1));
+        roundRobinAllocator.allocateWrapper(1, requests);
     }
 
     function test_allocateInvalidReplicaSizeRevert() public {
@@ -209,8 +210,8 @@ contract RoundRobinAllocatorTest is Test {
         vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidReplicaSize.selector));
         roundRobinAllocator.allocateWrapper(0, requests);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidReplicaSize.selector));
-        roundRobinAllocator.allocate(4, requests);
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidReplicaSize.selector));
+        roundRobinAllocator.allocateWrapper(4, requests);
     }
 
     function test_allocateNotEnoughData() public {
@@ -220,8 +221,8 @@ contract RoundRobinAllocatorTest is Test {
             size: 2048
         });
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.NotEnoughAllocationData.selector));
-        roundRobinAllocator.allocate(1, requests);
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.NotEnoughAllocationData.selector));
+        roundRobinAllocator.allocateWrapper(1, requests);
     }
 
     function test_getAllocationPackageRevert() public {
@@ -236,7 +237,7 @@ contract RoundRobinAllocatorTest is Test {
             size: 2048
         });
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CallerIsNotEOA.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CallerIsNotEOA.selector));
         roundRobinAllocator.allocate(1, requests);
     }
 
@@ -253,7 +254,7 @@ contract RoundRobinAllocatorTest is Test {
 
         roundRobinAllocator.emergencyCollateralRelease(packageId);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CollateralAlreadyClaimed.selector));
         roundRobinAllocator.claim(packageId);
     }
 
@@ -286,7 +287,7 @@ contract RoundRobinAllocatorTest is Test {
 
         roundRobinAllocator.emergencyCollateralRelease(packageId);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CollateralAlreadyClaimed.selector));
         roundRobinAllocator.claim(packageId);
     }
 
@@ -303,19 +304,24 @@ contract RoundRobinAllocatorTest is Test {
 
         roundRobinAllocator.claim(packageId);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CollateralAlreadyClaimed.selector));
         roundRobinAllocator.emergencyCollateralRelease(packageId);
     }
 
     function test_rraInitializeCollateralRevert() public {
         RoundRobinAllocator rra = new RoundRobinAllocator();
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidCollateralPerCID.selector));
-        rra.initialize(address(this), 0, MIN_REQ_SP);
+        bytes memory initData =
+            abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this), 0, rra.MIN_REQ_SP() - 1);
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidCollateralPerCID.selector));
+        new ERC1967Proxy(address(rra), initData);
     }
 
     function test_rraInitializeMinStorageProvidersRevert() public {
         RoundRobinAllocator rra = new RoundRobinAllocator();
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidMinRequiredStorageProviders.selector));
-        rra.initialize(address(this), COLLATERAL_PER_CID, 2);
+        bytes memory initData = abi.encodeWithSelector(
+            RoundRobinAllocator.initialize.selector, address(this), rra.MIN_COLLATERAL_PER_CID() - 1, 1
+        );
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidCollateralPerCID.selector));
+        new ERC1967Proxy(address(rra), initData);
     }
 }

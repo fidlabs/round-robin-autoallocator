@@ -7,8 +7,7 @@ library Events {
         uint64 indexed provider,
         uint256 indexed packageId,
         uint256 allocationSize,
-        uint64[] allocationIds,
-        uint256 collateral
+        uint64[] allocationIds
     );
     event AllocationClaimed(
         address indexed client, uint256 indexed packageId, uint64 indexed provider, uint64[] allocationIds

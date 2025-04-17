@@ -1,18 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {RoundRobinAllocator, AllocationRequest} from "../src/RoundRobinAllocator.sol";
-import {Errors} from "../src/lib/Errors.sol";
+import {ErrorLib} from "../src/lib/Errors.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract OwnerManagerTest is Test {
     RoundRobinAllocator public roundRobinAllocator;
 
     function setUp() public {
-        roundRobinAllocator = new RoundRobinAllocator();
-        roundRobinAllocator.initialize(address(this), 1, 3);
+        roundRobinAllocator = _deployRoundRobinAllocator();
+    }
+
+    function _deployRoundRobinAllocator() internal returns (RoundRobinAllocator) {
+        RoundRobinAllocator allocator = new RoundRobinAllocator();
+        bytes memory initData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this), 1, 3);
+        ERC1967Proxy proxy = new ERC1967Proxy(address(allocator), initData);
+        return RoundRobinAllocator(address(proxy));
     }
 
     function test_whenPausedRevert() public {
@@ -25,9 +32,9 @@ contract OwnerManagerTest is Test {
         roundRobinAllocator.claim(1);
 
         roundRobinAllocator.unpause();
-        vm.expectRevert(abi.encodeWithSelector(Errors.CallerIsNotEOA.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CallerIsNotEOA.selector));
         roundRobinAllocator.allocate(1, requests);
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidClaim.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidClaim.selector));
         roundRobinAllocator.claim(123);
     }
 

@@ -21,7 +21,7 @@ contract AllocatorManagerTest is Test {
 
     function _deployRoundRobinAllocator() internal returns (RoundRobinAllocator) {
         RoundRobinAllocator allocator = new RoundRobinAllocator();
-        bytes memory initData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this));
+        bytes memory initData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this), 1, 3);
         ERC1967Proxy proxy = new ERC1967Proxy(address(allocator), initData);
         return RoundRobinAllocator(address(proxy));
     }

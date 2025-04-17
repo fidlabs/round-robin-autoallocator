@@ -66,6 +66,8 @@ contract RoundRobinAllocator is
 
     uint32 constant _FRC46_TOKEN_TYPE = 2233613279;
     address private constant _DATACAP_ADDRESS = address(0xfF00000000000000000000000000000000000007);
+    uint256 public constant MIN_REQ_SP = 2;
+    uint256 public constant MIN_COLLATERAL_PER_CID = 1;
 
     constructor() {
         _disableInitializers();
@@ -84,14 +86,14 @@ contract RoundRobinAllocator is
 
         uint256 maxReplicas = 3;
 
-        if (collateralPerCID == 0) {
-            revert Errors.InvalidCollateralPerCID();
+        if (collateralPerCID < MIN_COLLATERAL_PER_CID) {
+            revert ErrorLib.InvalidCollateralPerCID();
         }
-        if (minRequiredStorageProviders < 2) {
-            revert Errors.InvalidMinRequiredStorageProviders();
+        if (minRequiredStorageProviders < MIN_REQ_SP) {
+            revert ErrorLib.InvalidMinRequiredStorageProviders();
         }
         if (minRequiredStorageProviders < maxReplicas) {
-            revert Errors.InvalidMinRequiredStorageProviders();
+            revert ErrorLib.InvalidMinRequiredStorageProviders();
         }
 
         Storage.AppConfig memory appConfig = Storage.AppConfig({
@@ -135,7 +137,7 @@ contract RoundRobinAllocator is
         }
         uint256 requiredCollateral = appConfig.collateralPerCID * allocReq.length * replicaSize;
         if (msg.value < requiredCollateral) {
-            revert Errors.InsufficientCollateral(requiredCollateral);
+            revert ErrorLib.InsufficientCollateral(requiredCollateral);
         }
 
         uint64[] memory providers = _pickStorageProviders(appConfig.minRequiredStorageProviders);
@@ -218,9 +220,9 @@ contract RoundRobinAllocator is
             emit Events.AllocationClaimed(package.client, packageId, provider, allocationIds);
         }
 
-        payable(package.client).transfer(package.collateral);
-
         emit Events.CollateralReleased(msg.sender, package.client, packageId, package.collateral);
+
+        payable(package.client).transfer(package.collateral);
     }
 
     function _allocationIdsToClaimIds(uint64[] memory allocationIds)
