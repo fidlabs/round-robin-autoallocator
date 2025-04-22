@@ -35,9 +35,9 @@ library Storage {
     // Allocation batch struct, used to store allocations made by a single transaction.
     struct AllocationPackage {
         address client; // Client address
+        bool claimed; // Whether the allocation has been claimed
         uint64[] storageProviders; // List of storage provider addresses involved
         mapping(uint64 => uint64[]) spAllocationIds; // List of allocation IDs per storage provider
-        bool claimed; // Whether the allocation has been claimed
         uint256 collateral; // Collateral amount
     }
 
@@ -51,6 +51,7 @@ library Storage {
      * @dev Returns a pointer to the storage namespace.
      */
     function _getAppStorage() private pure returns (AppStorage storage $) {
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             $.slot := APP_STORAGE
         }
@@ -66,8 +67,8 @@ library Storage {
     /**
      * @dev Sets the application configuration.
      */
-    function setAppConfig(AppConfig memory _appConfig) internal {
-        s().appConfig[APP_CONFIG_SLOT] = _appConfig;
+    function setAppConfig(AppConfig memory appConfig) internal {
+        s().appConfig[APP_CONFIG_SLOT] = appConfig;
     }
 
     /**

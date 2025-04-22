@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {Test, console} from "forge-std/Test.sol";
-import {AllocationCborTest} from "./lib/AllocationCborTest.sol";
+import {Test} from "forge-std/Test.sol";
 import {RoundRobinAllocator, AllocationRequest, AllocationPackageReturn} from "../src/RoundRobinAllocator.sol";
 import {DataCapApiMock} from "./mocks/DataCapApiMock.sol";
 import {VerifRegApiMock} from "./mocks/VerifRegApiMock.sol";
 import {ActorMock} from "./mocks/ActorMock.sol";
-import {StorageMock, SALT_MOCK} from "./mocks/StorageMock.sol";
+import {StorageMock} from "./mocks/StorageMock.sol";
 import {FilAddressIdConverter} from "filecoin-solidity/utils/FilAddressIdConverter.sol";
-import {SALT_MOCK_ADDRESS} from "./mocks/ConstantMock.sol";
-import {Errors} from "../src/lib/Errors.sol";
+import {ConstantMock} from "./mocks/ConstantMock.sol";
+import {ErrorLib} from "../src/lib/Errors.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract RoundRobinAllocatorWrapper is RoundRobinAllocator {
@@ -38,10 +38,12 @@ contract RoundRobinAllocatorTest is Test {
     uint256 public constant MIN_REQ_SP = 3;
 
     function setUp() public {
-        roundRobinAllocator = new RoundRobinAllocatorWrapper();
-        roundRobinAllocator.initialize(address(this), COLLATERAL_PER_CID, MIN_REQ_SP);
-        storageMock = new StorageMock{salt: SALT_MOCK}();
-        assertEq(address(storageMock), address(SALT_MOCK_ADDRESS));
+        roundRobinAllocator = _deployRoundRobinAllocator();
+
+        address storageMockAddr = ConstantMock.getSaltMockAddress();
+        vm.etch(storageMockAddr, type(StorageMock).runtimeCode);
+        storageMock = StorageMock(storageMockAddr);
+
         dataCapApiMock = new DataCapApiMock();
         verifRegApiMock = new VerifRegApiMock();
         actorMock = new ActorMock();
@@ -60,6 +62,13 @@ contract RoundRobinAllocatorTest is Test {
 
         // make sure we are able to get blockhash - 5
         vm.roll(100);
+    }
+
+    function _deployRoundRobinAllocator() internal returns (RoundRobinAllocatorWrapper) {
+        RoundRobinAllocatorWrapper allocator = new RoundRobinAllocatorWrapper();
+        bytes memory initData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this), 1, 3);
+        ERC1967Proxy proxy = new ERC1967Proxy(address(allocator), initData);
+        return RoundRobinAllocatorWrapper(address(proxy));
     }
 
     receive() external payable {
@@ -157,7 +166,7 @@ contract RoundRobinAllocatorTest is Test {
         AllocationPackageReturn memory allocRet = roundRobinAllocator.getAllocationPackage(packageId);
         assertEq(allocRet.claimed, true);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CollateralAlreadyClaimed.selector));
         roundRobinAllocator.claim(packageId);
     }
 
@@ -179,14 +188,14 @@ contract RoundRobinAllocatorTest is Test {
     }
 
     function test_singleClaimRevert() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidClaim.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidClaim.selector));
         roundRobinAllocator.claim(123123);
     }
 
     function test_allocateEmptyRequestRevert() public {
         AllocationRequest[] memory requests = new AllocationRequest[](0);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidAllocationRequest.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidAllocationRequest.selector));
         vm.prank(address(1));
         roundRobinAllocator.allocateWrapper(1, requests);
     }
@@ -198,10 +207,10 @@ contract RoundRobinAllocatorTest is Test {
             size: 2048
         });
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidReplicaSize.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidReplicaSize.selector));
         roundRobinAllocator.allocateWrapper(0, requests);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidReplicaSize.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidReplicaSize.selector));
         roundRobinAllocator.allocateWrapper(4, requests);
     }
 
@@ -212,12 +221,12 @@ contract RoundRobinAllocatorTest is Test {
             size: 2048
         });
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.NotEnoughAllocationData.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.NotEnoughAllocationData.selector));
         roundRobinAllocator.allocateWrapper(1, requests);
     }
 
     function test_getAllocationPackageRevert() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidPackageId.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidPackageId.selector));
         roundRobinAllocator.getAllocationPackage(123123);
     }
 
@@ -228,7 +237,7 @@ contract RoundRobinAllocatorTest is Test {
             size: 2048
         });
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CallerIsNotEOA.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CallerIsNotEOA.selector));
         roundRobinAllocator.allocate(1, requests);
     }
 
@@ -245,7 +254,7 @@ contract RoundRobinAllocatorTest is Test {
 
         roundRobinAllocator.emergencyCollateralRelease(packageId);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CollateralAlreadyClaimed.selector));
         roundRobinAllocator.claim(packageId);
     }
 
@@ -278,7 +287,7 @@ contract RoundRobinAllocatorTest is Test {
 
         roundRobinAllocator.emergencyCollateralRelease(packageId);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CollateralAlreadyClaimed.selector));
         roundRobinAllocator.claim(packageId);
     }
 
@@ -295,19 +304,24 @@ contract RoundRobinAllocatorTest is Test {
 
         roundRobinAllocator.claim(packageId);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.CollateralAlreadyClaimed.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.CollateralAlreadyClaimed.selector));
         roundRobinAllocator.emergencyCollateralRelease(packageId);
     }
 
     function test_rraInitializeCollateralRevert() public {
         RoundRobinAllocator rra = new RoundRobinAllocator();
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidCollateralPerCID.selector));
-        rra.initialize(address(this), 0, MIN_REQ_SP);
+        bytes memory initData =
+            abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this), 0, rra.MIN_REQ_SP() - 1);
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidCollateralPerCID.selector));
+        new ERC1967Proxy(address(rra), initData);
     }
 
     function test_rraInitializeMinStorageProvidersRevert() public {
         RoundRobinAllocator rra = new RoundRobinAllocator();
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidMinRequiredStorageProviders.selector));
-        rra.initialize(address(this), COLLATERAL_PER_CID, 2);
+        bytes memory initData = abi.encodeWithSelector(
+            RoundRobinAllocator.initialize.selector, address(this), rra.MIN_COLLATERAL_PER_CID() - 1, 1
+        );
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidCollateralPerCID.selector));
+        new ERC1967Proxy(address(rra), initData);
     }
 }

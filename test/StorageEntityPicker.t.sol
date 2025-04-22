@@ -3,7 +3,8 @@ pragma solidity =0.8.25;
 
 import {Test, console} from "forge-std/Test.sol";
 import {RoundRobinAllocator} from "../src/RoundRobinAllocator.sol";
-import {Errors} from "../src/lib/Errors.sol";
+import {ErrorLib} from "../src/lib/Errors.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 /**
  * @notice Wrapper contract to test internal functions
@@ -23,8 +24,7 @@ contract StorageEntityPickerTest is Test {
     uint256 public constant SE_INIT_COUNT = 8;
 
     function setUp() public {
-        roundRobinAllocator = new RoundRobinAllocatorWrapper();
-        roundRobinAllocator.initialize(address(this), 1, 3);
+        roundRobinAllocator = _deployRoundRobinAllocator();
 
         uint256 base = 1000;
 
@@ -42,6 +42,13 @@ contract StorageEntityPickerTest is Test {
 
         // make sure we are able to get blockhash - 5
         vm.roll(100);
+    }
+
+    function _deployRoundRobinAllocator() internal returns (RoundRobinAllocatorWrapper) {
+        RoundRobinAllocatorWrapper allocator = new RoundRobinAllocatorWrapper();
+        bytes memory initData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this), 1, 3);
+        ERC1967Proxy proxy = new ERC1967Proxy(address(allocator), initData);
+        return RoundRobinAllocatorWrapper(address(proxy));
     }
 
     function test_getRandomNumber() public {
@@ -71,7 +78,7 @@ contract StorageEntityPickerTest is Test {
     function test_pickStorageProvidersNotEnoughSERevert() public {
         uint256 numEntities = SE_INIT_COUNT + 1;
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.NotEnoughStorageEntities.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.NotEnoughStorageEntities.selector));
         roundRobinAllocator.pickStorageProviders(numEntities);
     }
 
@@ -87,7 +94,7 @@ contract StorageEntityPickerTest is Test {
 
     function test_pickStorageProvidersNotEnoughActiveSERevert() public {
         uint256 numEntities = SE_INIT_COUNT / 2 + 1;
-        vm.expectRevert(abi.encodeWithSelector(Errors.NotEnoughActiveStorageEntities.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorLib.NotEnoughActiveStorageEntities.selector));
         roundRobinAllocator.pickStorageProviders(numEntities);
     }
 }

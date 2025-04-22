@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";
 import {DataCapTypes} from "filecoin-solidity/types/DataCapTypes.sol";
 import {AllocationRequestCbor, AllocationRequestData} from "../src/lib/AllocationRequestCbor.sol";

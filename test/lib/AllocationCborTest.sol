@@ -4,7 +4,6 @@ pragma solidity =0.8.25;
 import {CBOR} from "solidity-cborutils/contracts/CBOR.sol";
 import {CBORDecoder} from "filecoin-solidity/utils/CborDecode.sol";
 import {BigIntCBOR} from "filecoin-solidity/cbor/BigIntCbor.sol";
-import {BigInts} from "filecoin-solidity/utils/BigInts.sol";
 import {Misc} from "filecoin-solidity/utils/Misc.sol";
 import {DataCapTypes} from "filecoin-solidity/types/DataCapTypes.sol";
 import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";
@@ -69,6 +68,7 @@ library AllocationCborTest {
      */
     function decodeTag(bytes memory cborData, uint256 byteIdx) internal pure returns (uint64 tag, uint256 newIdx) {
         (uint8 maj, uint64 value, uint256 idxAfter) = CBORDecoder.parseCborHeader(cborData, byteIdx);
+        // solhint-disable-next-line gas-custom-errors
         require(maj == 6, "Expected CBOR tag");
         return (value, idxAfter);
     }
@@ -82,6 +82,7 @@ library AllocationCborTest {
         // Read the top-level fixed array of 2 elements.
         uint256 topArrayLength;
         (topArrayLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
+        // solhint-disable-next-line gas-custom-errors
         require(topArrayLength == 2, "Invalid top-level array length");
 
         // First element: Fixed array of allocation requests.
@@ -93,7 +94,8 @@ library AllocationCborTest {
             // Each allocation request is a fixed array of 6 items.
             uint256 arrLength;
             (arrLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
-            require(arrLength == 6, "Invalid allocation request array length");
+            // solhint-disable-next-line gas-custom-errors
+            require(arrLength == 6, "Invalid alloc request array len");
 
             uint64 provider;
             (provider, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
@@ -119,7 +121,8 @@ library AllocationCborTest {
         // Second element: an empty array for ClaimExtensionRequest.
         uint256 extArrayLength;
         (extArrayLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
-        require(extArrayLength == 0, "Expected empty claim extension array");
+        // solhint-disable-next-line gas-custom-errors
+        require(extArrayLength == 0, "Expected empty claim ext array");
 
         return requests;
     }
@@ -137,6 +140,7 @@ library AllocationCborTest {
         // Read the top-level fixed array and ensure it has exactly 3 elements.
         uint256 topArrayLength;
         (topArrayLength, byteIdx) = CBORDecoder.readFixedArray(cborData, byteIdx);
+        // solhint-disable-next-line gas-custom-errors
         require(topArrayLength == 3, "Invalid top-level array length");
 
         // First element: the "to" address as a byte string.

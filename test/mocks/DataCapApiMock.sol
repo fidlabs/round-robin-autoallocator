@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {console} from "forge-std/console.sol";
 import {DataCapTypes} from "filecoin-solidity/types/DataCapTypes.sol";
 import {Misc} from "filecoin-solidity/utils/Misc.sol";
 import {BigInts} from "filecoin-solidity/utils/BigInts.sol";
@@ -9,12 +8,14 @@ import {BigInts} from "filecoin-solidity/utils/BigInts.sol";
 import {AllocationCborTest} from "../lib/AllocationCborTest.sol";
 import {AllocationRequestData} from "../../src/lib/AllocationRequestCbor.sol";
 import {StorageMock} from "./StorageMock.sol";
-import {SALT_MOCK_ADDRESS} from "./ConstantMock.sol";
+import {ConstantMock} from "./ConstantMock.sol";
 
 contract DataCapApiMock {
     error Err();
 
-    StorageMock public constant storageMock = StorageMock(SALT_MOCK_ADDRESS);
+    function getStorageMock() internal pure returns (StorageMock) {
+        return StorageMock(ConstantMock.getSaltMockAddress());
+    }
 
     event DebugBytes(address indexed client, bytes data);
     event DebugAllocationRequest(address indexed client, AllocationRequestData[] requests);
@@ -23,6 +24,7 @@ contract DataCapApiMock {
         revert Err();
     }
 
+    // solhint-disable-next-line no-complex-fallback, payable-fallback
     fallback(bytes calldata data) external payable returns (bytes memory) {
         (uint256 methodNum,,,, bytes memory raw_request, uint64 target) =
             abi.decode(data, (uint64, uint256, uint64, uint64, bytes, uint64));
@@ -42,7 +44,7 @@ contract DataCapApiMock {
                 uint64 deno = 100000;
                 uint64 allocationId = uint64((uint256(blockhash(block.number)) % deno) + i);
                 allocationIds[i] = allocationId;
-                storageMock.setAllocationProviderIsSet(requests[i].provider, allocationId, true);
+                getStorageMock().setAllocationProviderIsSet(requests[i].provider, allocationId, true);
             }
 
             bytes memory recipient_data = AllocationCborTest.encodeAllocationResponse(1, allocationIds);

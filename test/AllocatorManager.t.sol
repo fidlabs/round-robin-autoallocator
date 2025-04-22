@@ -4,9 +4,8 @@ pragma solidity =0.8.25;
 import {Test} from "forge-std/Test.sol";
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-
 import {RoundRobinAllocator} from "../src/RoundRobinAllocator.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract AllocatorManagerTest is Test {
     RoundRobinAllocator public roundRobinAllocator;
@@ -14,11 +13,17 @@ contract AllocatorManagerTest is Test {
     address public bobAddress;
 
     function setUp() public {
-        roundRobinAllocator = new RoundRobinAllocator();
-        roundRobinAllocator.initialize(address(this), 1, 3);
+        roundRobinAllocator = _deployRoundRobinAllocator();
 
         aliceAddress = makeAddr("alice");
         bobAddress = makeAddr("bob");
+    }
+
+    function _deployRoundRobinAllocator() internal returns (RoundRobinAllocator) {
+        RoundRobinAllocator allocator = new RoundRobinAllocator();
+        bytes memory initData = abi.encodeWithSelector(RoundRobinAllocator.initialize.selector, address(this), 1, 3);
+        ERC1967Proxy proxy = new ERC1967Proxy(address(allocator), initData);
+        return RoundRobinAllocator(address(proxy));
     }
 
     /**
