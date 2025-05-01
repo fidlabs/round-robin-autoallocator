@@ -1,17 +1,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import {Storage} from "./Storage.sol";
-import {ErrorLib} from "./lib/Errors.sol";
-import {Events} from "./lib/Events.sol";
+import {Storage} from "../libraries/Storage.sol";
+import {ErrorLib} from "../libraries/Errors.sol";
+import {Events} from "../libraries/Events.sol";
+import {Modifiers} from "../Modifiers.sol";
+import {IFacet} from "../interfaces/IFacet.sol";
 
 /**
  * @title OwnerManager
  * @notice This contract provides functions for the owner of the RoundRobinAllocator contract.
  */
-abstract contract OwnerManager is Ownable2StepUpgradeable, PausableUpgradeable {
+contract OwnerFacet is IFacet, Modifiers, PausableUpgradeable {
+    // get the function selectors for this facet for deployment and update scripts
+    function selectors() external pure returns (bytes4[] memory selectors_) {
+        selectors_ = new bytes4[](5);
+        selectors_[0] = this.setCollateralPerCID.selector;
+        selectors_[1] = this.setMinRequiredStorageProviders.selector;
+        selectors_[2] = this.emergencyCollateralRelease.selector;
+        selectors_[3] = this.pause.selector;
+        selectors_[4] = this.unpause.selector;
+    }
+
     function pause() external onlyOwner {
         _pause();
     }

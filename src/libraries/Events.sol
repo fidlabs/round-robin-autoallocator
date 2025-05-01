@@ -14,4 +14,13 @@ library Events {
     );
     event CollateralLocked(address indexed caller, uint256 indexed packageId, uint256 amount);
     event CollateralReleased(address indexed caller, address indexed client, uint256 indexed packageId, uint256 amount);
+
+    event StorageEntityCreated(address indexed creator, address indexed owner, uint64[] storageProviders);
+    event StrorageProvidersAdded(
+        address indexed creator, address indexed storageEntity, uint64[] addedStorageProviders
+    );
+    event StorageProviderRemoved(
+        address indexed creator, address indexed storageEntity, uint64[] removedStorageProviders
+    );
+    event StorageEntityActiveStatusChanged(address indexed creator, address indexed storageEntity, bool isActive);
 }

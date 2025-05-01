@@ -1,15 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {Storage} from "./Storage.sol";
-import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import {Storage} from "../libraries/Storage.sol";
+import {Modifiers} from "../Modifiers.sol";
+import {IFacet} from "../interfaces/IFacet.sol";
 
 /**
  * @title AllocatorManager
  * @notice Manage allocators.
  * Allocators are responsible for Storage Provider creation and management.
  */
-abstract contract AllocatorManager is Ownable2StepUpgradeable {
+contract AllocatorManagerFacet is IFacet, Modifiers {
+    // get the function selectors for this facet for deployment and update scripts
+    function selectors() external pure returns (bytes4[] memory selectors_) {
+        selectors_ = new bytes4[](3);
+        selectors_[0] = this.addAllocator.selector;
+        selectors_[1] = this.removeAllocator.selector;
+        selectors_[2] = this.getAllocators.selector;
+    }
+
     /**
      * @notice Add an allocator
      */

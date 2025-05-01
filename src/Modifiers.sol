@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-
-import {Storage} from "./Storage.sol";
-import {ErrorLib} from "./lib/Errors.sol";
+import {Storage} from "./libraries/Storage.sol";
+import {ErrorLib} from "./libraries/Errors.sol";
+import {LibDiamond} from "./libraries/LibDiamond.sol";
 
 /**
  * @notice Helper contract for shared modifiers
  */
-abstract contract Modifiers is Ownable2StepUpgradeable {
+abstract contract Modifiers {
     modifier onlyOwnerOrAllocator() {
-        if (msg.sender != owner()) {
+        if (msg.sender != LibDiamond.contractOwner()) {
             bool isAlloc = false;
             Storage.AppStorage storage s = Storage.s();
             for (uint256 i = 0; i < s.allocators.length; i++) {
@@ -23,6 +22,13 @@ abstract contract Modifiers is Ownable2StepUpgradeable {
             if (!isAlloc) {
                 revert ErrorLib.CallerIsNotOwnerOrAllocator();
             }
+        }
+        _;
+    }
+
+    modifier onlyOwner() {
+        if (msg.sender != LibDiamond.contractOwner()) {
+            revert ErrorLib.CallerIsNotOwner();
         }
         _;
     }
