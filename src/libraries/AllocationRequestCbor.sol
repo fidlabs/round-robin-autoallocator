@@ -5,7 +5,6 @@ import {Buffer} from "@ensdomains/buffer/contracts/Buffer.sol";
 import {CBOR} from "solidity-cborutils/contracts/CBOR.sol";
 import {Misc} from "filecoin-solidity/utils/Misc.sol";
 import {FilecoinCBOR} from "filecoin-solidity/cbor/FilecoinCbor.sol";
-import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";
 import {Types} from "./Types.sol";
 
 library AllocationRequestCbor {

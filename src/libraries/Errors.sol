@@ -107,4 +107,7 @@ library ErrorLib {
 
     // 0x3c29cbb6
     error NotPendingOwner(address caller, address pendingOwner);
+
+    // 0xf6b2911f
+    error InvalidZeroAddress();
 }

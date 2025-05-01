@@ -10,9 +10,6 @@ pragma solidity =0.8.25;
 
 import {LibDiamond} from "../libraries/LibDiamond.sol";
 import {IDiamondCut} from "../interfaces/IDiamondCut.sol";
-import {IDiamondLoupe} from "../interfaces/IDiamondLoupe.sol";
-import {IERC173} from "../interfaces/IERC173.sol";
-import {IERC165} from "../interfaces/IERC165.sol";
 
 // When no function exists for function called
 error FunctionNotFound(bytes4 _functionSelector);
@@ -36,10 +33,12 @@ contract Diamond {
 
     // Find facet for function that is called and execute the
     // function if a facet is found and return any value.
+    // solhint-disable-next-line no-complex-fallback
     fallback() external payable {
         LibDiamond.DiamondStorage storage ds;
         bytes32 position = LibDiamond.DIAMOND_STORAGE_POSITION;
         // get diamond storage
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             ds.slot := position
         }
@@ -49,6 +48,7 @@ contract Diamond {
             revert FunctionNotFound(msg.sig);
         }
         // Execute external function from facet using delegatecall and return any value.
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             // copy function selector and any arguments
             calldatacopy(0, 0, calldatasize())

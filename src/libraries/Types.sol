@@ -19,17 +19,17 @@ library Types {
 
     struct StorageProviderInfo {
         uint64 providerId;
-        uint64[] allocationIds;
         bool claimStatusComplete;
+        uint64[] allocationIds;
     }
 
     struct ClientPackageWithClaimStatus {
         uint256 packageId;
         address client;
         bool claimed;
+        bool canBeClaimed; // Overall package claim status
         uint256 collateral;
         StorageProviderInfo[] providers; // Single array of structured provider data
-        bool canBeClaimed; // Overall package claim status
     }
 
     struct PackageContext {

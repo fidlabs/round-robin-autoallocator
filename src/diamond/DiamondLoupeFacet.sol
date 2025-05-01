@@ -73,11 +73,13 @@ contract DiamondLoupeFacet is IFacet, IDiamondLoupe, IERC165 {
             uint256 numSelectors = numFacetSelectors[facetIndex];
             bytes4[] memory facetSelectors = facets_[facetIndex].functionSelectors;
             // setting the number of selectors
+            // solhint-disable-next-line no-inline-assembly
             assembly {
                 mstore(facetSelectors, numSelectors)
             }
         }
         // setting the number of facets
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             mstore(facets_, numFacets)
         }
@@ -106,6 +108,7 @@ contract DiamondLoupeFacet is IFacet, IDiamondLoupe, IERC165 {
             }
         }
         // Set the number of selectors in the array
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             mstore(_facetFunctionSelectors, numSelectors)
         }
@@ -141,6 +144,7 @@ contract DiamondLoupeFacet is IFacet, IDiamondLoupe, IERC165 {
             numFacets++;
         }
         // Set the number of facet addresses in the array
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             mstore(facetAddresses_, numFacets)
         }

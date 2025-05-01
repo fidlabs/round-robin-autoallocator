@@ -4,7 +4,7 @@ pragma solidity =0.8.25;
 import {LibDiamond} from "../libraries/LibDiamond.sol";
 import {IERC173} from "../interfaces/IERC173.sol";
 import {IFacet} from "../interfaces/IFacet.sol";
-import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import {ErrorLib} from "../libraries/Errors.sol";
 
 contract OwnershipFacet is IFacet, IERC173 {
     // get the function selectors for this facet for deployment and update scripts
@@ -18,7 +18,9 @@ contract OwnershipFacet is IFacet, IERC173 {
 
     function transferOwnership(address newOwner) external override {
         LibDiamond.enforceIsContractOwner();
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        if (newOwner == address(0)) {
+            revert ErrorLib.InvalidZeroAddress();
+        }
         LibDiamond.transferOwnership(newOwner);
     }
 

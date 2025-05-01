@@ -148,7 +148,7 @@ contract ViewFacet is IFacet {
      * @notice Check if a provider has completed all claims
      * @dev This function is external so we can use try/catch on it
      */
-    function checkProviderClaims(uint64 provider, uint64[] memory allocationIds) external view returns (bool) {
+    function checkProviderClaims(uint64 provider, uint64[] calldata allocationIds) external view returns (bool) {
         VerifRegTypes.GetClaimsParams memory params = VerifRegTypes.GetClaimsParams({
             provider: CommonTypes.FilActorId.wrap(provider),
             claim_ids: FilecoinConverter.allocationIdsToClaimIds(allocationIds)
