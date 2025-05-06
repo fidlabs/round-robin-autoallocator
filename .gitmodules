@@ -10,6 +10,3 @@
 [submodule "lib/filecoin-solidity"]
 	path = lib/filecoin-solidity
 	url = https://github.com/CodeWarriorr/filecoin-solidity
-[submodule "lib/solidity-stringutils"]
-	path = lib/solidity-stringutils
-	url = https://github.com/Arachnid/solidity-stringutils
