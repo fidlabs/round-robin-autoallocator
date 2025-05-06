@@ -3,4 +3,3 @@ solidity-cborutils/=lib/filecoin-solidity/lib/solidity-cborutils/
 @openzeppelin/contracts/=lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
 openzeppelin-foundry-upgrades/=lib/openzeppelin-foundry-upgrades/src/
-solidity-stringutils/=lib/solidity-stringutils/src/
