@@ -5,6 +5,7 @@ import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Pau
 import {Storage} from "../libraries/Storage.sol";
 import {ErrorLib} from "../libraries/Errors.sol";
 import {Events} from "../libraries/Events.sol";
+import {FilecoinEpochCalculator} from "../libraries/FilecoinEpochCalculator.sol";
 import {Modifiers} from "../Modifiers.sol";
 import {IFacet} from "../interfaces/IFacet.sol";
 
@@ -15,13 +16,14 @@ import {IFacet} from "../interfaces/IFacet.sol";
 contract OwnerFacet is IFacet, Modifiers, PausableUpgradeable {
     // get the function selectors for this facet for deployment and update scripts
     function selectors() external pure returns (bytes4[] memory selectors_) {
-        selectors_ = new bytes4[](6);
+        selectors_ = new bytes4[](7);
         selectors_[0] = this.setCollateralPerCID.selector;
         selectors_[1] = this.setMinRequiredStorageProviders.selector;
         selectors_[2] = this.emergencyCollateralRelease.selector;
         selectors_[3] = this.pause.selector;
         selectors_[4] = this.unpause.selector;
         selectors_[5] = this.paused.selector;
+        selectors_[6] = this.setDataCapTermMaxDays.selector;
     }
 
     function pause() external onlyOwner {
@@ -55,5 +57,12 @@ contract OwnerFacet is IFacet, Modifiers, PausableUpgradeable {
         emit Events.CollateralReleased(msg.sender, package.client, packageId, amount);
 
         payable(package.client).transfer(amount);
+    }
+
+    function setDataCapTermMaxDays(int64 dataCapTermMaxDays) external onlyOwner {
+        if (dataCapTermMaxDays <=0 || dataCapTermMaxDays > FilecoinEpochCalculator.FIVE_YEARS_IN_DAYS) {
+            revert ErrorLib.InvalidDataCapTermMaxDays();
+        }
+        Storage.getAppConfig().dataCapTermMaxDays = dataCapTermMaxDays;
     }
 }

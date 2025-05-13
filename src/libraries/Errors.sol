@@ -113,4 +113,7 @@ library ErrorLib {
 
     // 0xf6b2911f
     error InvalidZeroAddress();
+    
+    // 0xa40d5a3b
+    error InvalidDataCapTermMaxDays();
 }

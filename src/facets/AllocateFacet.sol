@@ -13,6 +13,7 @@ import {Types} from "../libraries/Types.sol";
 import {ErrorLib} from "../libraries/Errors.sol";
 import {Events} from "../libraries/Events.sol";
 import {Storage} from "../libraries/Storage.sol";
+import {FilecoinEpochCalculator} from "../libraries/FilecoinEpochCalculator.sol";
 import {StorageEntityPicker} from "../libraries/StorageEntityPicker.sol";
 import {AllocationRequestCbor} from "../libraries/AllocationRequestCbor.sol";
 import {AllocationResponseCbor} from "../libraries/AllocationResponseCbor.sol";
@@ -55,9 +56,9 @@ contract AllocateFacet is IFacet, Modifiers, PausableUpgradeable {
 
         uint64[] memory providers = StorageEntityPicker._pickStorageProviders(appConfig.minRequiredStorageProviders);
 
-        int64 termMin = 518400;
-        int64 termMax = 5256000;
-        int64 expiration = 114363;
+        int64 termMin = 0;
+        int64 termMax = FilecoinEpochCalculator.calcTermMax();
+        int64 expiration = FilecoinEpochCalculator.getExpiration();
         Types.ProviderAllocationPayload[] memory providerPayloads =
             allocReq.encodeAllocationDataPerProvider(providers, replicaSize, termMin, termMax, expiration);
 
