@@ -10,15 +10,25 @@ import {IDiamond} from "../src/interfaces/IDiamond.sol";
 
 import {FacetRegistry} from "./utils/FacetRegistry.sol";
 
-contract DeployDiamond is FacetRegistry, Script {
+contract CalibnetDeploy is FacetRegistry, Script {
     error InvalidEnv();
 
     function run() external {
-        if (!vm.envExists("PRIVATE_KEY_TEST")) {
+        if (
+            !vm.envExists("PRIVATE_KEY_MAINNET")
+            || !vm.envExists("RPC_URL_MAINNET")
+            || !vm.envExists("COLLATERAL_PER_CID")
+            || !vm.envExists("MIN_REQUIRED_STORAGE_PROVIDERS")
+            || !vm.envExists("MAX_REPLICAS")
+            ) {
             revert InvalidEnv();
         }
+        
+        uint collateralPerCID = vm.envUint("COLLATERAL_PER_CID") * 1e18;
+        uint minRequiredStorageProviders = vm.envUint("MIN_REQUIRED_STORAGE_PROVIDERS");
+        uint maxReplicas = vm.envUint("MAX_REPLICAS");
 
-        vm.startBroadcast(vm.envUint("PRIVATE_KEY_TEST"));
+        vm.startBroadcast(vm.envUint("PRIVATE_KEY_MAINNET"));
 
         // core diamond init
         DiamondInit diamondInit = new DiamondInit();
@@ -43,7 +53,7 @@ contract DeployDiamond is FacetRegistry, Script {
         DiamondArgs memory _args = DiamondArgs({
             owner: msg.sender,
             init: address(diamondInit),
-            initCalldata: abi.encodeWithSignature("init(uint256,uint256,uint256)", 0.1 ether, 2, 2)
+            initCalldata: abi.encodeWithSignature("init(uint256,uint256,uint256)", collateralPerCID, minRequiredStorageProviders, maxReplicas)
         });
 
         // deploy diamond with initial cuts and init
@@ -52,8 +62,6 @@ contract DeployDiamond is FacetRegistry, Script {
         vm.stopBroadcast();
 
         // Log the deployed contract address
-        // Used in devnet_init.sh
-        console.log("Devnet Diamond deployed");
         console.log("CONTRACT_ADDRESS:", address(diamond));
     }
 }
