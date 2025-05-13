@@ -20,15 +20,17 @@ import {Events} from "../libraries/Events.sol";
 contract StorageEntityManagerFacet is IFacet, Modifiers {
     // get the function selectors for this facet for deployment and update scripts
     function selectors() external pure returns (bytes4[] memory selectors_) {
-        selectors_ = new bytes4[](5);
+        selectors_ = new bytes4[](8);
         selectors_[0] = this.createStorageEntity.selector;
         selectors_[1] = this.addStorageProviders.selector;
         selectors_[2] = this.removeStorageProviders.selector;
         selectors_[3] = this.changeStorageEntityActiveStatus.selector;
         selectors_[4] = this.getStorageEntity.selector;
+        selectors_[6] = this.isStorageProviderUsed.selector;
+        selectors_[7] = this.getStorageEntities.selector;
     }
 
-    function createStorageEntity(address entityOwner, uint64[] calldata storageProviders) public onlyOwnerOrAllocator {
+    function createStorageEntity(address entityOwner, uint64[] calldata storageProviders) external onlyOwnerOrAllocator {
         if (Storage.s().storageEntities[entityOwner].owner != address(0)) {
             revert ErrorLib.StorageEntityAlreadyExists();
         }
@@ -51,8 +53,8 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
     }
 
     function addStorageProviders(address entityOwner, uint64[] calldata storageProviders)
-        public
-        onlyStorageEntity(entityOwner)
+        external
+        onlyOwnerOrStorageEntity(entityOwner)
     {
         _ensureNoStorageProviderUsed(storageProviders);
 
@@ -69,8 +71,8 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
     }
 
     function removeStorageProviders(address entityOwner, uint64[] calldata storageProviders)
-        public
-        onlyStorageEntity(entityOwner)
+        external
+        onlyOwnerOrStorageEntity(entityOwner)
     {
         Storage.StorageEntity storage se = Storage.s().storageEntities[entityOwner];
 
@@ -93,8 +95,8 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
     }
 
     function changeStorageEntityActiveStatus(address entityOwner, bool isActive)
-        public
-        onlyStorageEntity(entityOwner)
+        external
+        onlyOwnerOrStorageEntity(entityOwner)
     {
         Storage.StorageEntity storage se = Storage.s().storageEntities[entityOwner];
 
@@ -119,15 +121,15 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
         }
     }
 
-    function getStorageEntity(address entityOwner) public view returns (Storage.StorageEntity memory) {
+    function getStorageEntity(address entityOwner) external view returns (Storage.StorageEntity memory) {
         return Storage.s().storageEntities[entityOwner];
     }
 
-    function isStorageProviderUsed(uint64 storageProvider) public view returns (bool) {
+    function isStorageProviderUsed(uint64 storageProvider) external view returns (bool) {
         return Storage.s().usedStorageProviders[storageProvider];
     }
 
-    function getStorageEntities() public view returns (Storage.StorageEntity[] memory) {
+    function getStorageEntities() external view returns (Storage.StorageEntity[] memory) {
         address[] storage entityAddresses = Storage.s().entityAddresses;
         Storage.StorageEntity[] memory storageEntities = new Storage.StorageEntity[](entityAddresses.length);
         for (uint256 i = 0; i < entityAddresses.length; i++) {

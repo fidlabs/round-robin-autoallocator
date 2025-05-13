@@ -15,12 +15,13 @@ import {IFacet} from "../interfaces/IFacet.sol";
 contract OwnerFacet is IFacet, Modifiers, PausableUpgradeable {
     // get the function selectors for this facet for deployment and update scripts
     function selectors() external pure returns (bytes4[] memory selectors_) {
-        selectors_ = new bytes4[](5);
+        selectors_ = new bytes4[](6);
         selectors_[0] = this.setCollateralPerCID.selector;
         selectors_[1] = this.setMinRequiredStorageProviders.selector;
         selectors_[2] = this.emergencyCollateralRelease.selector;
         selectors_[3] = this.pause.selector;
         selectors_[4] = this.unpause.selector;
+        selectors_[5] = this.paused.selector;
     }
 
     function pause() external onlyOwner {
