@@ -1,31 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.25;
 
-import {Storage} from "./Storage.sol";
-import {Modifiers} from "./Modifiers.sol";
-import {ErrorLib} from "./lib/Errors.sol";
+import {Storage} from "../libraries/Storage.sol";
+import {Modifiers} from "../Modifiers.sol";
+import {ErrorLib} from "../libraries/Errors.sol";
+import {IFacet} from "../interfaces/IFacet.sol";
+import {Events} from "../libraries/Events.sol";
 
 /**
  * @title
  * @author
  * @notice
  *
- * TODO: is adding not-yours storage provider allowed? possible? injects any risks?
- *
  * @dev
  * Only Allocator can create a Storage Entity
  * Only Storage Entity can add/remove storage providers
  * Only Storage Entity can change its active status
  */
-abstract contract StorageEntityManager is Modifiers {
-    event StorageEntityCreated(address indexed creator, address indexed owner, uint64[] storageProviders);
-    event StrorageProvidersAdded(
-        address indexed creator, address indexed storageEntity, uint64[] addedStorageProviders
-    );
-    event StorageProviderRemoved(
-        address indexed creator, address indexed storageEntity, uint64[] removedStorageProviders
-    );
-    event StorageEntityActiveStatusChanged(address indexed creator, address indexed storageEntity, bool isActive);
+contract StorageEntityManagerFacet is IFacet, Modifiers {
+    // get the function selectors for this facet for deployment and update scripts
+    function selectors() external pure returns (bytes4[] memory selectors_) {
+        selectors_ = new bytes4[](5);
+        selectors_[0] = this.createStorageEntity.selector;
+        selectors_[1] = this.addStorageProviders.selector;
+        selectors_[2] = this.removeStorageProviders.selector;
+        selectors_[3] = this.changeStorageEntityActiveStatus.selector;
+        selectors_[4] = this.getStorageEntity.selector;
+    }
 
     function createStorageEntity(address entityOwner, uint64[] calldata storageProviders) public onlyOwnerOrAllocator {
         if (Storage.s().storageEntities[entityOwner].owner != address(0)) {
@@ -46,7 +47,7 @@ abstract contract StorageEntityManager is Modifiers {
             Storage.s().usedStorageProviders[storageProviders[i]] = true;
         }
 
-        emit StorageEntityCreated(msg.sender, entityOwner, storageProviders);
+        emit Events.StorageEntityCreated(msg.sender, entityOwner, storageProviders);
     }
 
     function addStorageProviders(address entityOwner, uint64[] calldata storageProviders)
@@ -64,7 +65,7 @@ abstract contract StorageEntityManager is Modifiers {
             Storage.s().usedStorageProviders[storageProviders[i]] = true;
         }
 
-        emit StrorageProvidersAdded(msg.sender, entityOwner, storageProviders);
+        emit Events.StrorageProvidersAdded(msg.sender, entityOwner, storageProviders);
     }
 
     function removeStorageProviders(address entityOwner, uint64[] calldata storageProviders)
@@ -88,7 +89,7 @@ abstract contract StorageEntityManager is Modifiers {
             }
         }
 
-        emit StorageProviderRemoved(msg.sender, entityOwner, storageProviders);
+        emit Events.StorageProviderRemoved(msg.sender, entityOwner, storageProviders);
     }
 
     function changeStorageEntityActiveStatus(address entityOwner, bool isActive)
@@ -101,7 +102,7 @@ abstract contract StorageEntityManager is Modifiers {
 
         se.isActive = isActive;
 
-        emit StorageEntityActiveStatusChanged(msg.sender, entityOwner, isActive);
+        emit Events.StorageEntityActiveStatusChanged(msg.sender, entityOwner, isActive);
     }
 
     function _ensureNoStorageProviderUsed(uint64[] calldata storageProviders) internal view {

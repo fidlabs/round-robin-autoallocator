@@ -45,6 +45,9 @@ library ErrorLib {
     // 0xac57b77e
     error CallerIsNotStorageEntity();
 
+    // 0x6db2465f
+    error CallerIsNotOwner();
+
     // 0xe9211a00
     error CallerIsNotOwnerOrAllocator();
 
@@ -101,4 +104,10 @@ library ErrorLib {
 
     // 0xe5f19a39
     error InvalidThirdElement();
+
+    // 0x3c29cbb6
+    error NotPendingOwner(address caller, address pendingOwner);
+
+    // 0xf6b2911f
+    error InvalidZeroAddress();
 }

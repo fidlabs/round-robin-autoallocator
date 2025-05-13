@@ -2,9 +2,9 @@
 pragma solidity =0.8.25;
 
 import {Storage} from "./Storage.sol";
-import {ErrorLib} from "./lib/Errors.sol";
+import {ErrorLib} from "./Errors.sol";
 
-abstract contract StorageEntityPicker {
+library StorageEntityPicker {
     /**
      * @param max The maximum number to return
      * @return A semi-random number between 0 and max
