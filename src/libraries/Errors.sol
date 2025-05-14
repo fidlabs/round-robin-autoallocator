@@ -45,6 +45,9 @@ library ErrorLib {
     // 0xac57b77e
     error CallerIsNotStorageEntity();
 
+    // 0xdaec9bb7
+    error CallerIsNoOwnerOrStorageEntity();
+
     // 0x6db2465f
     error CallerIsNotOwner();
 
@@ -110,4 +113,7 @@ library ErrorLib {
 
     // 0xf6b2911f
     error InvalidZeroAddress();
+
+    // 0xa40d5a3b
+    error InvalidDataCapTermMaxDays();
 }

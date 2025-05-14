@@ -51,12 +51,12 @@ cast send --json --gas-limit 9000000000 --private-key $PRIVATE_KEY_TEST --rpc-ur
 # set -e
 echo ""
 echo "Waiting for storage entity transaction to be processed..."
-sleep 10 
+sleep 30 
 echo ""
 echo "Setting devnet config..."
 cast send --json --gas-limit 9000000000 --private-key $PRIVATE_KEY_TEST --rpc-url $RPC_TEST $PROXY_ADDRESS_TEST "setDevnetAppConfig()" || echo "Command failed but continuing anyway"
 echo "Waiting for devnet config transaction to be processed..."
-sleep 10 
+sleep 30 
 echo ""
 echo "Sending allocation transaction..."
 cast send --json --gas-limit 9000000000 --value 0.1ether --private-key $PRIVATE_KEY_TEST --rpc-url $RPC_TEST $PROXY_ADDRESS_TEST 'allocate(uint256,(bytes,uint64)[])' 1 '[(0x0181e203922020ab68b07850bae544b4e720ff59fdc7de709a8b5a8e83d6b7ab3ac2fa83e8461b, 2048)]' 

@@ -61,7 +61,8 @@ contract DiamondInit {
             minReplicas: 1,
             maxReplicas: maxReplicas,
             collateralPerCID: collateralPerCID,
-            minRequiredStorageProviders: minRequiredStorageProviders
+            minRequiredStorageProviders: minRequiredStorageProviders,
+            dataCapTermMaxDays: 1_825 // 5 years
         });
 
         Storage.setAppConfig(appConfig);
