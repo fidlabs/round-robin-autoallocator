@@ -30,7 +30,10 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
         selectors_[7] = this.getStorageEntities.selector;
     }
 
-    function createStorageEntity(address entityOwner, uint64[] calldata storageProviders) external onlyOwnerOrAllocator {
+    function createStorageEntity(address entityOwner, uint64[] calldata storageProviders)
+        external
+        onlyOwnerOrAllocator
+    {
         if (Storage.s().storageEntities[entityOwner].owner != address(0)) {
             revert ErrorLib.StorageEntityAlreadyExists();
         }

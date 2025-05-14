@@ -11,7 +11,13 @@ import {Storage} from "../libraries/Storage.sol";
  */
 library FilecoinEpochCalculator {
     int64 public constant EPOCHS_PER_DAY = 2_880;
+    int64 public constant TERM_MIN = 518_400; // 180 days
     int64 public constant FIVE_YEARS_IN_DAYS = 1_825;
+
+    function getTermMin() internal pure returns (int64) {
+        // 180 days, required by the Filecoin network
+        return TERM_MIN;
+    }
 
     function calcTermMax() internal view returns (int64) {
         return Storage.getAppConfig().dataCapTermMaxDays * EPOCHS_PER_DAY;

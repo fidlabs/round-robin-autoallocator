@@ -56,7 +56,7 @@ contract AllocateFacet is IFacet, Modifiers, PausableUpgradeable {
 
         uint64[] memory providers = StorageEntityPicker._pickStorageProviders(appConfig.minRequiredStorageProviders);
 
-        int64 termMin = 0;
+        int64 termMin = FilecoinEpochCalculator.getTermMin();
         int64 termMax = FilecoinEpochCalculator.calcTermMax();
         int64 expiration = FilecoinEpochCalculator.getExpiration();
         Types.ProviderAllocationPayload[] memory providerPayloads =

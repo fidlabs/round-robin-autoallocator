@@ -40,7 +40,8 @@ library AllocationResponseCbor {
             if (firstElemLength != 2) {
                 revert ErrorLib.InvalidFirstElement();
             }
-            // First sub-element
+            // First sub-element, ignore it
+            // slither-disable-next-line unused-return
             (, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
             // Second sub-element
             uint256 innerLength;
@@ -59,6 +60,7 @@ library AllocationResponseCbor {
                 revert ErrorLib.InvalidSecondElement();
             }
             // First sub-element, extension are not supported atm so we ignore it
+            // slither-disable-next-line unused-return
             (, byteIdx) = CBORDecoder.readUInt64(cborData, byteIdx);
             // Second sub-element
             uint256 innerLength;

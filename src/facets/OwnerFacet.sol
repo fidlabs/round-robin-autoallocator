@@ -60,7 +60,10 @@ contract OwnerFacet is IFacet, Modifiers, PausableUpgradeable {
     }
 
     function setDataCapTermMaxDays(int64 dataCapTermMaxDays) external onlyOwner {
-        if (dataCapTermMaxDays <=0 || dataCapTermMaxDays > FilecoinEpochCalculator.FIVE_YEARS_IN_DAYS) {
+        if (
+            dataCapTermMaxDays <= FilecoinEpochCalculator.TERM_MIN
+                || dataCapTermMaxDays > FilecoinEpochCalculator.FIVE_YEARS_IN_DAYS
+        ) {
             revert ErrorLib.InvalidDataCapTermMaxDays();
         }
         Storage.getAppConfig().dataCapTermMaxDays = dataCapTermMaxDays;

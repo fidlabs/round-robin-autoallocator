@@ -15,18 +15,16 @@ contract CalibnetDeploy is FacetRegistry, Script {
 
     function run() external {
         if (
-            !vm.envExists("PRIVATE_KEY_MAINNET")
-            || !vm.envExists("RPC_URL_MAINNET")
-            || !vm.envExists("COLLATERAL_PER_CID")
-            || !vm.envExists("MIN_REQUIRED_STORAGE_PROVIDERS")
-            || !vm.envExists("MAX_REPLICAS")
-            ) {
+            !vm.envExists("PRIVATE_KEY_MAINNET") || !vm.envExists("RPC_URL_MAINNET")
+                || !vm.envExists("COLLATERAL_PER_CID") || !vm.envExists("MIN_REQUIRED_STORAGE_PROVIDERS")
+                || !vm.envExists("MAX_REPLICAS")
+        ) {
             revert InvalidEnv();
         }
-        
-        uint collateralPerCID = vm.envUint("COLLATERAL_PER_CID") * 1e18;
-        uint minRequiredStorageProviders = vm.envUint("MIN_REQUIRED_STORAGE_PROVIDERS");
-        uint maxReplicas = vm.envUint("MAX_REPLICAS");
+
+        uint256 collateralPerCID = vm.envUint("COLLATERAL_PER_CID") * 1e18;
+        uint256 minRequiredStorageProviders = vm.envUint("MIN_REQUIRED_STORAGE_PROVIDERS");
+        uint256 maxReplicas = vm.envUint("MAX_REPLICAS");
 
         vm.startBroadcast(vm.envUint("PRIVATE_KEY_MAINNET"));
 
@@ -53,7 +51,9 @@ contract CalibnetDeploy is FacetRegistry, Script {
         DiamondArgs memory _args = DiamondArgs({
             owner: msg.sender,
             init: address(diamondInit),
-            initCalldata: abi.encodeWithSignature("init(uint256,uint256,uint256)", collateralPerCID, minRequiredStorageProviders, maxReplicas)
+            initCalldata: abi.encodeWithSignature(
+                "init(uint256,uint256,uint256)", collateralPerCID, minRequiredStorageProviders, maxReplicas
+            )
         });
 
         // deploy diamond with initial cuts and init
