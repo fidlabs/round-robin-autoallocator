@@ -20,14 +20,14 @@ import {Events} from "../libraries/Events.sol";
 contract StorageEntityManagerFacet is IFacet, Modifiers {
     // get the function selectors for this facet for deployment and update scripts
     function selectors() external pure returns (bytes4[] memory selectors_) {
-        selectors_ = new bytes4[](8);
+        selectors_ = new bytes4[](7);
         selectors_[0] = this.createStorageEntity.selector;
         selectors_[1] = this.addStorageProviders.selector;
         selectors_[2] = this.removeStorageProviders.selector;
         selectors_[3] = this.changeStorageEntityActiveStatus.selector;
         selectors_[4] = this.getStorageEntity.selector;
-        selectors_[6] = this.isStorageProviderUsed.selector;
-        selectors_[7] = this.getStorageEntities.selector;
+        selectors_[5] = this.isStorageProviderUsed.selector;
+        selectors_[6] = this.getStorageEntities.selector;
     }
 
     function createStorageEntity(address entityOwner, uint64[] calldata storageProviders)

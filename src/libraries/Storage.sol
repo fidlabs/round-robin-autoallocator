@@ -78,7 +78,7 @@ library Storage {
     }
 
     /**
-     * @dev Set data cao term max days
+     * @dev Set data cap term max days
      */
     function setDataCapTermMaxDays(int64 value) internal {
         AppConfig storage config = getAppConfig();

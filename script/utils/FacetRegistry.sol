@@ -32,17 +32,19 @@ abstract contract FacetRegistry {
     }
 
     function getNonCoreFacetAddresses() internal view returns (address[] memory facetAddresses) {
-        uint256 coreCount = 0;
+        uint256 nonCoreCount = 0;
         for (uint256 i = 0; i < facets.length; i++) {
-            if (facets[i].isCore) {
-                coreCount++;
+            if (!facets[i].isCore) {
+                nonCoreCount++;
             }
         }
-        uint256 numFacets = facets.length;
-        uint256 nonCoreCount = numFacets - coreCount;
         facetAddresses = new address[](nonCoreCount);
-        for (uint256 i = 0; i < numFacets; i++) {
-            facetAddresses[i] = facets[i].impl;
+        uint256 j = 0;
+        for (uint256 i = 0; i < facets.length; i++) {
+            if (!facets[i].isCore) {
+                facetAddresses[j] = facets[i].impl;
+                j++;
+            }
         }
     }
 
