@@ -55,6 +55,15 @@ abstract contract FacetRegistry {
         }
     }
 
+    function isCoreFacet(address addr) internal view returns (bool) {
+        for (uint256 i = 0; i < facets.length; i++) {
+            if (facets[i].impl == addr && facets[i].isCore) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function _registerCoreFacet(string memory name, address impl) internal {
         facets.push(FacetInfo(name, impl, true));
     }

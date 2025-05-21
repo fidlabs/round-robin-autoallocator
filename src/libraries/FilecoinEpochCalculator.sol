@@ -2,6 +2,7 @@
 pragma solidity =0.8.25;
 
 import {Storage} from "../libraries/Storage.sol";
+import {ErrorLib} from "../libraries/Errors.sol";
 
 /**
  * Term Length	Seconds (≈)	    Epochs (≈)
@@ -13,17 +14,32 @@ library FilecoinEpochCalculator {
     int64 public constant EPOCHS_PER_DAY = 2_880;
     int64 public constant TERM_MIN = 518_400; // 180 days
     int64 public constant FIVE_YEARS_IN_DAYS = 1_825;
+    uint256 public constant EXPIRATION = 86_400; // 30 days
 
+    /**
+     * @dev Relative to current epoch
+     */
     function getTermMin() internal pure returns (int64) {
         // 180 days, required by the Filecoin network
         return TERM_MIN;
     }
 
+    /**
+     * @dev Relative to current epoch
+     */
     function calcTermMax() internal view returns (int64) {
         return Storage.getAppConfig().dataCapTermMaxDays * EPOCHS_PER_DAY;
     }
 
-    function getExpiration() internal pure returns (int64) {
-        return 30 * EPOCHS_PER_DAY; // 30 days
+    /**
+     * @dev Absolute to current epoch
+     */
+    function getExpiration() internal view returns (int64) {
+        // uint256 rawExpiration = block.number + uint256(uint64(EXPIRATION));
+        uint256 rawExpiration = block.number + EXPIRATION;
+        if (rawExpiration > uint256(int256(type(int64).max))) {
+            revert ErrorLib.Overflow();
+        }
+        return int64(int256(rawExpiration));
     }
 }

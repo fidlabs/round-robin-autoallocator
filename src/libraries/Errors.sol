@@ -116,4 +116,7 @@ library ErrorLib {
 
     // 0xa40d5a3b
     error InvalidDataCapTermMaxDays();
+
+    // 0x35278d12
+    error Overflow();
 }
