@@ -55,6 +55,13 @@ abstract contract Modifiers {
         _;
     }
 
+    modifier onlyOwnerOrStorageEntity(address storageEntity) {
+        if (msg.sender != LibDiamond.contractOwner() && msg.sender != storageEntity) {
+            revert ErrorLib.CallerIsNoOwnerOrStorageEntity();
+        }
+        _;
+    }
+
     modifier onlyEOA() {
         // solhint-disable-next-line avoid-tx-origin
         if (msg.sender != tx.origin) {

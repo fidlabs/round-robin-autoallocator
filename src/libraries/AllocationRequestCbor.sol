@@ -143,6 +143,8 @@ library AllocationRequestCbor {
         CBOR.writeUInt64(buffer, req.size);
 
         // directly append pre-encoded terms
+        // ignore returned original buffer
+        // slither-disable-next-line unused-return
         Buffer.append(buffer.buf, encodedTerms);
     }
 }
