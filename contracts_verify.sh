@@ -7,7 +7,7 @@ NETWORK=${1:-Calibnet}
 echo "Starting contract verification script..."
 
 if [[ "$NETWORK" != "Calibnet" && "$NETWORK" != "Mainnet" ]]; then
-  echo "Unknown network: $NETWORK, avaliable: <Calibnet|Mainnet>"
+  echo "Unknown network: $NETWORK, available: <Calibnet|Mainnet>"
   exit 1
 fi
 echo "Using network: $NETWORK"
@@ -19,7 +19,7 @@ elif [[ "$NETWORK" == "Mainnet" ]]; then
   CHAIN_ALIAS="filecoin"
   CHAIN_ID="314"
 else
-  echo "Unknown network: $NETWORK. avaliable: <Calibnet|Mainnet>"
+  echo "Unknown network: $NETWORK. available: <Calibnet|Mainnet>"
   exit 1
 fi
 
@@ -38,7 +38,7 @@ while read -r line; do
 done < <(jq -r '.transactions[] | select(.contractName != null) | select(.contractAddress != null) | "\(.contractName)|\(.contractAddress)|\(.arguments // [])"' "$DEPLOY_JSON")
 
 if [[ ${#CONTRACTS[@]} -eq 0 ]]; then
-  echo "No deployed contracts found in $DEPLOY_FILE"
+  echo "No deployed contracts found in $DEPLOY_JSON"
   exit 0
 fi
 
