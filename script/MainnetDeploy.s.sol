@@ -15,9 +15,8 @@ contract MainnetDeploy is FacetRegistry, Script {
 
     function run() external {
         if (
-            !vm.envExists("PRIVATE_KEY_MAINNET") || !vm.envExists("RPC_MAINNET")
-                || !vm.envExists("COLLATERAL_PER_CID") || !vm.envExists("MIN_REQUIRED_STORAGE_PROVIDERS")
-                || !vm.envExists("MAX_REPLICAS")
+            !vm.envExists("PRIVATE_KEY_MAINNET") || !vm.envExists("RPC_MAINNET") || !vm.envExists("COLLATERAL_PER_CID")
+                || !vm.envExists("MIN_REQUIRED_STORAGE_PROVIDERS") || !vm.envExists("MAX_REPLICAS")
         ) {
             revert InvalidEnv();
         }
