@@ -18,15 +18,23 @@ solhint:
 	solhint 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'
 
 devnet_deploy:
-	forge clean & forge build
+	forge clean && forge build
 	forge script script/DevnetDeploy.s.sol --gas-estimate-multiplier 100000 --disable-block-gas-limit -vvvv --broadcast --rpc-url $(RPC_TEST) --private-key $(PRIVATE_KEY_TEST) 
 
 calibnet_deploy:
-	forge clean & forge build
+	rm -rf cache/ out/
+	forge clean && forge build
 	forge script script/CalibnetDeploy.s.sol --gas-estimate-multiplier 100000 --disable-block-gas-limit -vvvv --broadcast --rpc-url $(RPC_CALIBNET) --private-key $(PRIVATE_KEY_TEST) 
+	./contracts_verify.sh Calibnet
+
+mainnet_deploy:
+	rm -rf cache/ out/
+	forge clean && forge build
+	forge script script/MainnetDeploy.s.sol --gas-estimate-multiplier 100000 --disable-block-gas-limit -vvvv --broadcast --rpc-url $(RPC_MAINNET) --private-key $(PRIVATE_KEY_MAINNET) 
+	./contracts_verify.sh Mainnet
 
 devnet_upgrade:
-	forge clean & forge build
+	forge clean && forge build
 	forge script script/DevnetUpgrade.s.sol --gas-estimate-multiplier 100000 --disable-block-gas-limit -vvvv --broadcast --rpc-url $(RPC_TEST) --private-key $(PRIVATE_KEY_TEST) 
 
 devnet_allocate:
