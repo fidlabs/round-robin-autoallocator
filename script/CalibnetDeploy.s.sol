@@ -10,15 +10,15 @@ import {IDiamond} from "../src/interfaces/IDiamond.sol";
 
 import {FacetRegistry} from "./utils/FacetRegistry.sol";
 
-contract DeployDiamond is FacetRegistry, Script {
+contract CalibnetDeploy is FacetRegistry, Script {
     error InvalidEnv();
 
     function run() external {
-        if (!vm.envExists("PRIVATE_KEY_TEST")) {
+        if (!vm.envExists("PRIVATE_KEY_CALIBNET")) {
             revert InvalidEnv();
         }
 
-        vm.startBroadcast(vm.envUint("PRIVATE_KEY_TEST"));
+        vm.startBroadcast(vm.envUint("PRIVATE_KEY_CALIBNET"));
 
         // core diamond init
         DiamondInit diamondInit = new DiamondInit();
@@ -52,8 +52,7 @@ contract DeployDiamond is FacetRegistry, Script {
         vm.stopBroadcast();
 
         // Log the deployed contract address
-        // Used in devnet_init.sh
-        console.log("Devnet Diamond deployed");
+        console.log("Calibnet Diamond deployed");
         console.log("CONTRACT_ADDRESS:", address(diamond));
     }
 }

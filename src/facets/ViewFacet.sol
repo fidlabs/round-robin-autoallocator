@@ -72,6 +72,7 @@ contract ViewFacet is IFacet {
         view
         returns (Types.ClientPackageWithClaimStatus memory)
     {
+        // slither-disable-next-line uninitialized-local
         Types.PackageContext memory ctx;
         ctx.packageId = packageId;
         (ctx.packageInfo,) = _getPackageBasicInfo(ctx);

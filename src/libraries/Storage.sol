@@ -4,8 +4,6 @@ pragma solidity =0.8.25;
 /**
  * @title Storage
  * @dev Storage library for the RoundRobinAllocator contract.
- *
- * TODO: pack structs properly b4 final version
  */
 library Storage {
     // keccak256(abi.encode(uint256(keccak256("roundrobinallocator.app.storage")) - 1)) & ~bytes32(uint256(0xff))
@@ -16,7 +14,7 @@ library Storage {
     struct AppStorage {
         mapping(uint256 => AppConfig) appConfig; // Application configuration
         mapping(uint256 => AllocationPackage) allocationPackages; // Allocation packages
-        uint256 packageCount; // Number of allocation packages, used to generate unique IDs // TODO: might be lees, maybe pack it
+        uint256 packageCount; // Number of allocation packages, used to generate unique IDs
         mapping(address => uint256[]) clientAllocationPackages; // List of allocation package IDs per client
         address[] allocators; // List of allocator addresses
         mapping(address => StorageEntity) storageEntities; // Storage entities
@@ -30,6 +28,7 @@ library Storage {
         uint256 maxReplicas; // Maximum number of replicas
         uint256 collateralPerCID; // Collateral per CID
         uint256 minRequiredStorageProviders; // Minimum required storage providers
+        int64 dataCapTermMaxDays; // Maximum number of days for data cap termMax
     }
 
     // Allocation batch struct, used to store allocations made by a single transaction.
@@ -76,5 +75,13 @@ library Storage {
      */
     function getAppConfig() internal view returns (AppConfig storage) {
         return s().appConfig[APP_CONFIG_SLOT];
+    }
+
+    /**
+     * @dev Set data cap term max days
+     */
+    function setDataCapTermMaxDays(int64 value) internal {
+        AppConfig storage config = getAppConfig();
+        config.dataCapTermMaxDays = value;
     }
 }

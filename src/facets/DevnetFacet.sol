@@ -3,12 +3,13 @@ pragma solidity =0.8.25;
 
 import {Storage} from "../libraries/Storage.sol";
 import {IFacet} from "../interfaces/IFacet.sol";
+import {Modifiers} from "../Modifiers.sol";
 
-contract DevnetFacet is IFacet {
+contract DevnetFacet is IFacet, Modifiers {
     error NotOnDevnet();
 
     constructor() {
-        if (block.chainid != 31415926) {
+        if (block.chainid != 31415926 && block.chainid != 314159) {
             revert NotOnDevnet();
         }
     }
@@ -19,7 +20,7 @@ contract DevnetFacet is IFacet {
         selectors_[0] = this.setDevnetAppConfig.selector;
     }
 
-    function setDevnetAppConfig() external {
+    function setDevnetAppConfig() external onlyOwner {
         Storage.AppConfig storage appConfig = Storage.getAppConfig();
         appConfig.minReplicas = 1;
         appConfig.maxReplicas = 1;
