@@ -80,7 +80,6 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
 
         _ensureStorageEntityExists(se);
 
-
         for (uint256 j = 0; j < storageProviders.length; j++) {
             uint64 sp = storageProviders[j];
 
@@ -93,10 +92,7 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
                     se.storageProviders.pop();
                     Storage.s().usedStorageProviders[sp] = false;
 
-                    se.providerDetails[sp] = Storage.ProviderDetails({
-                        isActive: false,
-                        spaceLeft: 0
-                    });
+                    se.providerDetails[sp] = Storage.ProviderDetails({isActive: false, spaceLeft: 0});
                     break;
                 }
             }
@@ -150,7 +146,10 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
         se.providerDetails[storageProvider] = details;
     }
 
-    function _ensureStorageProviderIsAssignedToStorageEntity(Storage.StorageEntity storage se, uint64 storageProvider) internal view {
+    function _ensureStorageProviderIsAssignedToStorageEntity(Storage.StorageEntity storage se, uint64 storageProvider)
+        internal
+        view
+    {
         // Check if sp is assigned to the entity
         bool isAssigned = false;
         for (uint256 i = 0; i < se.storageProviders.length; i++) {
