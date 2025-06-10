@@ -119,4 +119,7 @@ library ErrorLib {
 
     // 0x35278d12
     error Overflow();
+
+    // 0x8865bd93
+    error StorageProviderNotAssignedToEntity();
 }

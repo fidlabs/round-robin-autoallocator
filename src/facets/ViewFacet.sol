@@ -14,12 +14,14 @@ import {FilecoinConverter} from "../libraries/FilecoinConverter.sol";
 contract ViewFacet is IFacet {
     // get the function selectors for this facet for deployment and update scripts
     function selectors() external pure returns (bytes4[] memory selectors_) {
-        selectors_ = new bytes4[](5);
+        selectors_ = new bytes4[](7);
         selectors_[0] = this.getAllocationPackage.selector;
         selectors_[1] = this.getClientPackagesWithClaimStatus.selector;
         selectors_[2] = this.getPackageWithClaimStatus.selector;
         selectors_[3] = this.checkProviderClaims.selector;
         selectors_[4] = this.getAppConfig.selector;
+        selectors_[5] = this.getStorageEntity.selector;
+        selectors_[6] = this.getStorageEntities.selector;
     }
 
     function getAppConfig() external view returns (Storage.AppConfig memory appConfig) {
@@ -162,5 +164,42 @@ contract ViewFacet is IFacet {
         }
 
         return result.batch_info.success_count == allocationIds.length;
+    }
+
+    function getStorageEntity(address entityOwner) external view returns (Types.StorageEntityView memory) {
+        if (Storage.s().storageEntities[entityOwner].owner == address(0)) {
+            revert ErrorLib.StorageEntityDoesNotExist();
+        }
+        return _storageEntityToView(Storage.s().storageEntities[entityOwner]);
+    }
+
+    function getStorageEntities() external view returns (Types.StorageEntityView[] memory) {
+        address[] storage entityAddresses = Storage.s().entityAddresses;
+        Types.StorageEntityView[] memory storageEntities = new Types.StorageEntityView[](entityAddresses.length);
+        for (uint256 i = 0; i < entityAddresses.length; i++) {
+            storageEntities[i] = _storageEntityToView(Storage.s().storageEntities[entityAddresses[i]]);
+        }
+        return storageEntities;
+    }
+
+    function _storageEntityToView(Storage.StorageEntity storage se)
+        internal
+        view
+        returns (Types.StorageEntityView memory)
+    {
+        Types.StorageEntityView memory entityView;
+        entityView.isActive = se.isActive;
+        entityView.owner = se.owner;
+        entityView.storageProviders = se.storageProviders;
+        entityView.providerDetails = new Types.ProviderDetailsView[](se.storageProviders.length);
+        for (uint256 i = 0; i < se.storageProviders.length; i++) {
+            uint64 providerId = se.storageProviders[i];
+            entityView.providerDetails[i] = Types.ProviderDetailsView({
+                providerId: providerId,
+                spaceLeft: se.providerDetails[providerId].spaceLeft,
+                isActive: se.providerDetails[providerId].isActive
+            });
+        }
+        return entityView;
     }
 }

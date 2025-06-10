@@ -20,14 +20,13 @@ import {Events} from "../libraries/Events.sol";
 contract StorageEntityManagerFacet is IFacet, Modifiers {
     // get the function selectors for this facet for deployment and update scripts
     function selectors() external pure returns (bytes4[] memory selectors_) {
-        selectors_ = new bytes4[](7);
+        selectors_ = new bytes4[](6);
         selectors_[0] = this.createStorageEntity.selector;
         selectors_[1] = this.addStorageProviders.selector;
         selectors_[2] = this.removeStorageProviders.selector;
-        selectors_[3] = this.changeStorageEntityActiveStatus.selector;
-        selectors_[4] = this.getStorageEntity.selector;
-        selectors_[5] = this.isStorageProviderUsed.selector;
-        selectors_[6] = this.getStorageEntities.selector;
+        selectors_[3] = this.setStorageEntityActiveStatus.selector;
+        selectors_[4] = this.isStorageProviderUsed.selector;
+        selectors_[5] = this.setStorageProviderDetails.selector;
     }
 
     function createStorageEntity(address entityOwner, uint64[] calldata storageProviders)
@@ -63,7 +62,7 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
 
         Storage.StorageEntity storage se = Storage.s().storageEntities[entityOwner];
 
-        _ensureStorageEntityNotExists(se);
+        _ensureStorageEntityExists(se);
 
         for (uint256 i = 0; i < storageProviders.length; i++) {
             se.storageProviders.push(storageProviders[i]);
@@ -79,16 +78,21 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
     {
         Storage.StorageEntity storage se = Storage.s().storageEntities[entityOwner];
 
-        _ensureStorageEntityNotExists(se);
+        _ensureStorageEntityExists(se);
 
         for (uint256 j = 0; j < storageProviders.length; j++) {
             uint64 sp = storageProviders[j];
+
+            _ensureStorageProviderIsAssignedToStorageEntity(se, sp);
+
             Storage.s().usedStorageProviders[sp] = false;
             for (uint256 i = 0; i < se.storageProviders.length; i++) {
                 if (se.storageProviders[i] == sp) {
                     se.storageProviders[i] = se.storageProviders[se.storageProviders.length - 1];
                     se.storageProviders.pop();
                     Storage.s().usedStorageProviders[sp] = false;
+
+                    se.providerDetails[sp] = Storage.ProviderDetails({isActive: false, spaceLeft: 0});
                     break;
                 }
             }
@@ -97,13 +101,13 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
         emit Events.StorageProviderRemoved(msg.sender, entityOwner, storageProviders);
     }
 
-    function changeStorageEntityActiveStatus(address entityOwner, bool isActive)
+    function setStorageEntityActiveStatus(address entityOwner, bool isActive)
         external
         onlyOwnerOrStorageEntity(entityOwner)
     {
         Storage.StorageEntity storage se = Storage.s().storageEntities[entityOwner];
 
-        _ensureStorageEntityNotExists(se);
+        _ensureStorageEntityExists(se);
 
         se.isActive = isActive;
 
@@ -118,26 +122,44 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
         }
     }
 
-    function _ensureStorageEntityNotExists(Storage.StorageEntity storage se) internal view {
+    function _ensureStorageEntityExists(Storage.StorageEntity storage se) internal view {
         if (se.owner == address(0)) {
             revert ErrorLib.StorageEntityDoesNotExist();
         }
-    }
-
-    function getStorageEntity(address entityOwner) external view returns (Storage.StorageEntity memory) {
-        return Storage.s().storageEntities[entityOwner];
     }
 
     function isStorageProviderUsed(uint64 storageProvider) external view returns (bool) {
         return Storage.s().usedStorageProviders[storageProvider];
     }
 
-    function getStorageEntities() external view returns (Storage.StorageEntity[] memory) {
-        address[] storage entityAddresses = Storage.s().entityAddresses;
-        Storage.StorageEntity[] memory storageEntities = new Storage.StorageEntity[](entityAddresses.length);
-        for (uint256 i = 0; i < entityAddresses.length; i++) {
-            storageEntities[i] = Storage.s().storageEntities[entityAddresses[i]];
+    function setStorageProviderDetails(
+        address entityOwner,
+        uint64 storageProvider,
+        Storage.ProviderDetails calldata details
+    ) external onlyOwnerOrStorageEntity(entityOwner) {
+        Storage.StorageEntity storage se = Storage.s().storageEntities[entityOwner];
+
+        _ensureStorageEntityExists(se);
+
+        _ensureStorageProviderIsAssignedToStorageEntity(se, storageProvider);
+
+        se.providerDetails[storageProvider] = details;
+    }
+
+    function _ensureStorageProviderIsAssignedToStorageEntity(Storage.StorageEntity storage se, uint64 storageProvider)
+        internal
+        view
+    {
+        // Check if sp is assigned to the entity
+        bool isAssigned = false;
+        for (uint256 i = 0; i < se.storageProviders.length; i++) {
+            if (se.storageProviders[i] == storageProvider) {
+                isAssigned = true;
+                break;
+            }
         }
-        return storageEntities;
+        if (!isAssigned) {
+            revert ErrorLib.StorageProviderNotAssignedToEntity();
+        }
     }
 }
