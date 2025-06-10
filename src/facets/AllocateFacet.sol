@@ -49,12 +49,16 @@ contract AllocateFacet is IFacet, Modifiers, PausableUpgradeable {
         if (allocReq.length * replicaSize < appConfig.minRequiredStorageProviders) {
             revert ErrorLib.NotEnoughAllocationData();
         }
-        uint256 requiredCollateral = appConfig.collateralPerCID * allocReq.length * replicaSize;
-        if (msg.value < requiredCollateral) {
-            revert ErrorLib.InsufficientCollateral(requiredCollateral);
+        {
+            uint256 requiredCollateral = appConfig.collateralPerCID * allocReq.length * replicaSize;
+            if (msg.value < requiredCollateral) {
+                revert ErrorLib.InsufficientCollateral(requiredCollateral);
+            }
         }
-
-        uint64[] memory providers = StorageEntityPicker._pickStorageProviders(appConfig.minRequiredStorageProviders);
+        uint256 maxSpacePerProvider =
+            _calculateMaxAllocationSizePerProvider(allocReq, replicaSize, appConfig.minRequiredStorageProviders);
+        uint64[] memory providers =
+            StorageEntityPicker._pickStorageProviders(appConfig.minRequiredStorageProviders, maxSpacePerProvider);
 
         int64 termMin = FilecoinEpochCalculator.getTermMin();
         int64 termMax = FilecoinEpochCalculator.calcTermMax();
@@ -98,5 +102,22 @@ contract AllocateFacet is IFacet, Modifiers, PausableUpgradeable {
         emit Events.CollateralLocked(msg.sender, packageId, msg.value);
 
         return packageId;
+    }
+
+    /**
+     * @dev Calculate the worst case (maximum) allocation size based on the request.
+     * cost: approx 20 gas per allocReq entry.
+     */
+    function _calculateMaxAllocationSizePerProvider(
+        Types.AllocationRequest[] calldata allocReq,
+        uint256 replicaSize,
+        uint256 minProviders
+    ) internal pure returns (uint256) {
+        uint256 totalBytes = 0;
+        for (uint256 i = 0; i < allocReq.length; i++) {
+            totalBytes += uint256(allocReq[i].size) * replicaSize;
+        }
+        // ceil(a/b) == (a + b - 1) / b
+        return (totalBytes + minProviders - 1) / minProviders;
     }
 }

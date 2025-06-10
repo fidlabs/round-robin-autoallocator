@@ -40,10 +40,16 @@ library Storage {
         uint256 collateral; // Collateral amount
     }
 
+    struct ProviderDetails {
+        bool isActive; // Whether the provider is active
+        uint256 spaceLeft; // Space left for the provider
+    }
+
     struct StorageEntity {
         bool isActive; // Whether the storage entity is active
         address owner; // Owner address, used to verify ownership
         uint64[] storageProviders; // List of storage providers
+        mapping(uint64 => ProviderDetails) providerDetails; // Mapping by provider ID
     }
 
     /**
