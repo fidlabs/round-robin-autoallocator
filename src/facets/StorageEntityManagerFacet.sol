@@ -135,7 +135,7 @@ contract StorageEntityManagerFacet is IFacet, Modifiers {
     function setStorageProviderDetails(
         address entityOwner,
         uint64 storageProvider,
-        Storage.ProviderDetails memory details
+        Storage.ProviderDetails calldata details
     ) external onlyOwnerOrStorageEntity(entityOwner) {
         Storage.StorageEntity storage se = Storage.s().storageEntities[entityOwner];
 
