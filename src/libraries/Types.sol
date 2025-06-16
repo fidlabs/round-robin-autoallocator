@@ -132,4 +132,17 @@ library Types {
         // 15301680 -> 1A 00E9A4A0 -> 1 + 4 bytes
         int64 expiration;
     }
+
+    struct StorageEntityView {
+        bool isActive;
+        address owner;
+        uint64[] storageProviders;
+        ProviderDetailsView[] providerDetails;
+    }
+
+    struct ProviderDetailsView {
+        bool isActive; // Whether the provider is active
+        uint64 providerId; // Provider ID
+        uint256 spaceLeft; // Space left for the provider
+    }
 }
