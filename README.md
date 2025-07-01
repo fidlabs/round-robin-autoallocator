@@ -14,9 +14,20 @@ Auto Allocator that assigns data cap to each client and semi-random storage prov
   - [Allocation Phase](#allocation-phase)
   - [Claim Phase](#claim-phase)
   - [Collateral Retrieval](#collateral-retrieval)
-- [Requirements](#requirements)
 - [Demo](#demo)
+- [Usage](#usage)
+   - [Flow overview](#flow-overview)
+   - [Prepare CAR files](#prepare-car-files)
+   - [Prepare input data for allocation](#prepare-input-data-for-allocation)
+   - [Prepare ETH wallet with sufficient balance](#prepare-eth-wallet-with-sufficient-balance)
+   - [Getting current collateral value per CID](#getting-current-collateral-value-per-cid)
+   - [Create Allocation Package (Transfer Data Cap for multiple files)](#create-allocation-package-transfer-data-cap-for-multiple-files)
+      - [Example of using the Frontend app](#example-of-using-the-frontend-app)
+      - [Example of using the CSV file with `cast` command](#example-of-using-the-csv-file-with-cast-command)
+   - [Monitoring Allocation Packages](#monitoring-allocation-packages)
+   - [Retrieving Collateral](#retrieving-collateral)
 - [Deployment](#deployment)
+  - [Requirements](#requirements)
   - [Environment Setup](#environment-setup)
    - [Deployment](#deployment-1)
       - [Calibnet Deployment](#calibnet-deployment)
@@ -89,20 +100,113 @@ The semi-random selection works by starting from a random index in the storage e
 - Each CID is only replicated once per provider
 - Allocations are distributed fairly across all active providers
 
-## Requirements
+## Demo
+
+You can view and try out the Round Robin Allocator on the Filecoin Calibration network using the Louper explorer. 
+
+Direct link for the deployed contract: [https://louper.dev/diamond/0x71B65138aceBe6c010C366586B58BB01D5D97f4E?network=filecoinCalibration](https://louper.dev/diamond/0x71B65138aceBe6c010C366586B58BB01D5D97f4E?network=filecoinCalibration)
+
+Demo Staging Frontend: [https://round-robin.staging.allocator.tech](https://round-robin.staging.allocator.tech)
+
+Video of the demo Frontend: [YouTube Video](https://youtu.be/czBpO_WaVXA)
+
+
+## Usage
+
+### Flow overview:
+
+1. **Prepare CAR files**
+2. **Prepare input data for allocation**: Prepare `CommCID` and `Data Size` for each file.
+3. **Call `allocate` contract function**
+4. **Provide files to storage providers**: SPs will store the data and claim their allocations.
+5. **Retrieve collateral**: After all claims are verified, call `retrieveCollateral` to get your collateral back.
+
+
+### Prepare CAR files
+
+Use CAR file preparation tools (e.g. Singularity, lotus,  etc.) to create CAR files from your data.
+
+### Prepare input data for allocation
+
+To transfer data cap, for each file, you need to prepare the following:
+- **CommCID**: The CommP content identifier for the data you want to allocate, in HEX format
+   - Example: `0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef`
+- **Data Size**: The padded size of the data in bytes
+   - Example: `2048`
+   
+To prepare HEX format of CommP, you can use the following docker image: `mmach/car-processor:0.1.0`
+
+This image will require directory with your CAR files to be mounted as a volume.
+
+Output will be created in form of CSV file in the same directory named `output.csv` with the following columns: `CommPCID_InHex,DataSizeInBytes` without header.
+
+Example docker image usage:
+```bash
+docker run --rm -it -v -v $(pwd)/cars:/data mmach/car-processor:0.1.0
+```
+
+### Prepare ETH wallet with sufficient balance
+
+To interact with the Round Robin AutoAllocator contract, you need an Ethereum wallet with sufficient balance to cover gas fees and collateral. You can use tools like [MetaMask](https://metamask.io/) (frontend) or [Foundry](https://book.getfoundry.sh/getting-started/installation) (CLI) to manage your wallet.
+
+### Getting current collateral value per CID
+
+The Easiest way to get current collateral value per CID is to use contract Frontend app where this information is displayed.
+
+Alternatively, you can use the Louper explorer app (or CLI) to invoke the `getAppConfig` function of the contract (in read tab, choose ViewFacet [here](https://louper.dev/diamond/0x71B65138aceBe6c010C366586B58BB01D5D97f4E?network=filecoinCalibration#read)). This function returns current contract config including the collateral value per CID.
+
+### Create Allocation Package (Transfer Data Cap for multiple files)
+
+To create allocation package and transfer Data Cap, you can either:
+- Upload the CSV directly in the frontend demo application (refer to the video in demo section)
+- Use the CSV content and invoke `allocate` function through command line e.g. using [Foundry](https://book.getfoundry.sh/getting-started/installation) `cast` command to interact with the contract
+
+#### Example of using the Frontend app
+
+1. Open the [Round Robin Allocator Frontend](https://round-robin.staging.allocator.tech).
+2. Connect your Ethereum wallet (e.g. MetaMask).
+3. Upload CSV file with your prepared data.
+4. Specify the number of replicas you want to allocate.
+5. Click "Allocate" to send the transaction to the contract.
+
+
+#### Example of using the CSV file with `cast` command
+
+1. Format CSV content into the required format for the `allocate` function.
+   - params: ***replicaAmount, [(CommPCIDinHex, DataPaddedSize)]***
+2. Prepare private key and RPC URL in your environment variables or directly in the command.
+3. Calculate collateral value based on the number of CIDs and replicas.
+3. Use the following command to send the allocation request:
+
+```bash
+cast send --json --value 0.1ether --gas-limit 9000000000 --private-key $(PRIVATE_KEY) --rpc-url $(RPC_URL) $(DIAMOND_CONTRACT_ADDRESS) 'allocate(uint256,(bytes,uint64)[])' 1 '[(0x0181e203922020ab68b07850bae544b4e720ff59fdc7de709a8b5a8e83d6b7ab3ac2fa83e8461b, 2048)]' 
+```
+
+### Monitoring Allocation Packages
+
+The Easiest way to monitor your allocation packages is through the Frontend app, where you can connect your wallet and view your allocations.
+
+Alternatively, you can use the Louper explorer to check your allocation packages by invoking the `getClientPackagesWithClaimStatus` function (in read tab, choose ViewFacet [here](https://louper.dev/diamond/0x71B65138aceBe6c010C366586B58BB01D5D97f4E?network=filecoinCalibration#read)). This function will return all allocation packages associated with your wallet address, along with their claim status.
+
+### Retrieving Collateral
+
+Collateral can be retrieved after all storage providers have successfully claimed their allocations. 
+
+You can view the status of your allocation packages and their claims using the Louper explorer or the Frontend app.
+
+The Frontend app will let you call `retrieveCollateral` function directly when conditions are met.
+
+In the Louper explorer, you can invoke the `retrieveCollateral` function (in write tab, choose RetrieveCollateralFacet [here](https://louper.dev/diamond/0x71B65138aceBe6c010C366586B58BB01D5D97f4E?network=filecoinCalibration#write)) to retrieve your collateral.
+
+## Deployment
+
+### Requirements
 
 - [Foundry](https://book.getfoundry.sh/getting-started/installation)
 - [Solidity](https://docs.soliditylang.org/) version 0.8.25
 - Access to a Filecoin network (Devnet/Calibnet/Mainnet)
 - DataCap allocation for the contract account
 - Environment file (.env) with appropriate configuration
-
-## Demo
-
-You can view and try out the Round Robin Allocator on the Filecoin Calibration network using the Louper explorer. 
-Direct link for the deployed contract: [https://louper.dev/diamond/0x71B65138aceBe6c010C366586B58BB01D5D97f4E?network=filecoinCalibration](https://louper.dev/diamond/0x71B65138aceBe6c010C366586B58BB01D5D97f4E?network=filecoinCalibration)
-
-## Deployment
 
 ### Environment Setup
 
