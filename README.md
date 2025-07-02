@@ -142,7 +142,7 @@ Output will be created in form of CSV file in the same directory named `output.c
 
 Example docker image usage:
 ```bash
-docker run --rm -it -v -v $(pwd)/cars:/data mmach/car-processor:0.1.0
+docker run --rm -it -v $(pwd)/cars:/data mmach/car-processor:0.1.0
 ```
 
 ### Prepare ETH wallet with sufficient balance
