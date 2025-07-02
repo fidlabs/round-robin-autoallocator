@@ -1,4 +1,4 @@
-.PHONY: test deploy new
+.PHONY: test deploy new mainnet_deploy mainnet_verify prep abi solhint 
 
 include .env
 
