@@ -13,6 +13,8 @@ docs/
 # Dotenv file
 .env
 
+example/cars/output.csv
+
 z_notes
 precompiles
 broadcast
