@@ -16,7 +16,7 @@ if [[ "$NETWORK" == "Calibnet" ]]; then
   CHAIN_ALIAS="filecoin-calibration-testnet"
   CHAIN_ID="314159"
 elif [[ "$NETWORK" == "Mainnet" ]]; then
-  CHAIN_ALIAS="filecoin"
+  CHAIN_ALIAS="filecoin-mainnet"
   CHAIN_ID="314"
 else
   echo "Unknown network: $NETWORK. available: <Calibnet|Mainnet>"

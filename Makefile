@@ -1,4 +1,4 @@
-.PHONY: test deploy new
+.PHONY: test deploy new mainnet_deploy mainnet_verify prep abi solhint 
 
 include .env
 
@@ -31,6 +31,9 @@ mainnet_deploy:
 	rm -rf cache/ out/
 	forge clean && forge build
 	forge script script/MainnetDeploy.s.sol --gas-estimate-multiplier 100000 --disable-block-gas-limit -vvvv --broadcast --rpc-url $(RPC_MAINNET) --private-key $(PRIVATE_KEY_MAINNET) 
+	./contracts_verify.sh Mainnet
+
+mainnet_verify:
 	./contracts_verify.sh Mainnet
 
 devnet_upgrade:

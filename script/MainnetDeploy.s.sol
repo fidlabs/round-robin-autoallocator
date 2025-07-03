@@ -21,7 +21,7 @@ contract MainnetDeploy is FacetRegistry, Script {
             revert InvalidEnv();
         }
 
-        uint256 collateralPerCID = vm.envUint("COLLATERAL_PER_CID") * 1e18;
+        uint256 collateralPerCID = vm.envUint("COLLATERAL_PER_CID");
         uint256 minRequiredStorageProviders = vm.envUint("MIN_REQUIRED_STORAGE_PROVIDERS");
         uint256 maxReplicas = vm.envUint("MAX_REPLICAS");
 
