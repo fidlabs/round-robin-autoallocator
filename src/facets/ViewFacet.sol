@@ -13,7 +13,7 @@ import {FilecoinConverter} from "../libraries/FilecoinConverter.sol";
 
 contract ViewFacet is IFacet {
     // get the function selectors for this facet for deployment and update scripts
-    function selectors() external pure returns (bytes4[] memory selectors_) {
+    function selectors() external pure virtual returns (bytes4[] memory selectors_) {
         selectors_ = new bytes4[](7);
         selectors_[0] = this.getAllocationPackage.selector;
         selectors_[1] = this.getClientPackagesWithClaimStatus.selector;
@@ -187,6 +187,7 @@ contract ViewFacet is IFacet {
         view
         returns (Types.StorageEntityView memory)
     {
+        // slither-disable-next-line uninitialized-local
         Types.StorageEntityView memory entityView;
         entityView.isActive = se.isActive;
         entityView.owner = se.owner;

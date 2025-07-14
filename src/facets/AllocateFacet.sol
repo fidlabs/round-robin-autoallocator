@@ -23,7 +23,7 @@ contract AllocateFacet is IFacet, Modifiers, PausableUpgradeable {
     using AllocationResponseCbor for DataCapTypes.TransferReturn;
 
     // get the function selectors for this facet for deployment and update scripts
-    function selectors() external pure returns (bytes4[] memory selectors_) {
+    function selectors() external pure virtual returns (bytes4[] memory selectors_) {
         selectors_ = new bytes4[](1);
         selectors_[0] = this.allocate.selector;
     }

@@ -15,7 +15,7 @@ import {IFacet} from "../interfaces/IFacet.sol";
  */
 contract OwnerFacet is IFacet, Modifiers, PausableUpgradeable {
     // get the function selectors for this facet for deployment and update scripts
-    function selectors() external pure returns (bytes4[] memory selectors_) {
+    function selectors() external pure virtual returns (bytes4[] memory selectors_) {
         selectors_ = new bytes4[](7);
         selectors_[0] = this.setCollateralPerCID.selector;
         selectors_[1] = this.setMinRequiredStorageProviders.selector;
@@ -62,7 +62,8 @@ contract OwnerFacet is IFacet, Modifiers, PausableUpgradeable {
     function setDataCapTermMaxDays(int64 dataCapTermMaxDays) external onlyOwner {
         if (
             dataCapTermMaxDays <= FilecoinEpochCalculator.TERM_MIN
-                || dataCapTermMaxDays > FilecoinEpochCalculator.FIVE_YEARS_IN_DAYS
+                || dataCapTermMaxDays
+                    > (FilecoinEpochCalculator.EPOCHS_PER_DAY * FilecoinEpochCalculator.FIVE_YEARS_IN_DAYS)
         ) {
             revert ErrorLib.InvalidDataCapTermMaxDays();
         }
