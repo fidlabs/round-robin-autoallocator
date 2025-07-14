@@ -15,11 +15,7 @@ contract DevnetFacet is IFacet, Modifiers {
      * 31337 - hardhat localnet
      */
     constructor() {
-        if (
-            block.chainid != 31415926 &&
-            block.chainid != 314159 &&
-            block.chainid != 31337
-        ) {
+        if (block.chainid != 31415926 && block.chainid != 314159 && block.chainid != 31337) {
             revert NotOnDevnet(block.chainid);
         }
     }
