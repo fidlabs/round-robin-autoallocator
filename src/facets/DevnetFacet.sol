@@ -6,11 +6,17 @@ import {IFacet} from "../interfaces/IFacet.sol";
 import {Modifiers} from "../Modifiers.sol";
 
 contract DevnetFacet is IFacet, Modifiers {
-    error NotOnDevnet();
+    error NotOnDevnet(uint256 chainId);
 
+    /**
+     * @notice Build-in protection against deploying this facet on mainnet or testnet.
+     * 314159 - calibnet
+     * 31415926 - localnet / devenet
+     * 31337 - hardhat localnet
+     */
     constructor() {
-        if (block.chainid != 31415926 && block.chainid != 314159) {
-            revert NotOnDevnet();
+        if (block.chainid != 31415926 && block.chainid != 314159 && block.chainid != 31337) {
+            revert NotOnDevnet(block.chainid);
         }
     }
 

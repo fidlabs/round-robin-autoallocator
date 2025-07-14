@@ -15,7 +15,7 @@ import {IERC165} from "../interfaces/IERC165.sol";
 
 contract DiamondLoupeFacet is IFacet, IDiamondLoupe, IERC165 {
     // get the function selectors for this facet for deployment and update scripts
-    function selectors() external pure returns (bytes4[] memory) {
+    function selectors() external pure virtual returns (bytes4[] memory) {
         bytes4[] memory _selectors = new bytes4[](4);
         _selectors[0] = this.facets.selector;
         _selectors[1] = this.facetFunctionSelectors.selector;

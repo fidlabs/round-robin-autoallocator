@@ -12,7 +12,7 @@ import {IFacet} from "../interfaces/IFacet.sol";
  */
 contract AllocatorManagerFacet is IFacet, Modifiers {
     // get the function selectors for this facet for deployment and update scripts
-    function selectors() external pure returns (bytes4[] memory selectors_) {
+    function selectors() external pure virtual returns (bytes4[] memory selectors_) {
         selectors_ = new bytes4[](3);
         selectors_[0] = this.addAllocator.selector;
         selectors_[1] = this.removeAllocator.selector;

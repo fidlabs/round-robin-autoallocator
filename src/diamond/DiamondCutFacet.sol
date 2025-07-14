@@ -15,7 +15,7 @@ import {LibDiamond} from "../libraries/LibDiamond.sol";
 
 contract DiamondCutFacet is IFacet, IDiamondCut {
     // get the function selectors for this facet for deployment and update scripts
-    function selectors() external pure returns (bytes4[] memory) {
+    function selectors() external pure virtual returns (bytes4[] memory) {
         bytes4[] memory _selectors = new bytes4[](1);
         _selectors[0] = this.diamondCut.selector;
         return _selectors;
