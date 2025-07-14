@@ -7,7 +7,6 @@ import {ConstantMock} from "./ConstantMock.sol";
 import {Misc} from "filecoin-solidity/utils/Misc.sol";
 import {ClaimCborTest} from "../lib/ClaimCborTest.sol";
 import {CommonTypes} from "filecoin-solidity/types/CommonTypes.sol";
-import {StorageMock} from "./StorageMock.sol";
 
 contract VerifRegApiMock {
     error Err();

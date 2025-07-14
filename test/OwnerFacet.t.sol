@@ -70,20 +70,20 @@ contract OwnerFacetTest is Test {
     }
 
     function test_setDataCapTermMaxDays() public {
-        int64 newDataCapTermMaxDays = FilecoinEpochCalculator.TERM_MIN + 1000;
+        int64 newDataCapTermMaxDays = FilecoinEpochCalculator.TERM_MIN_IN_DAYS + 1000;
         ownerFacet.setDataCapTermMaxDays(newDataCapTermMaxDays);
         assertEq(viewFacet.getAppConfig().dataCapTermMaxDays, newDataCapTermMaxDays);
     }
 
     function test_setDataCapTermMaxDaysRevert() public {
         vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidDataCapTermMaxDays.selector));
-        ownerFacet.setDataCapTermMaxDays(FilecoinEpochCalculator.TERM_MIN - 1);
+        ownerFacet.setDataCapTermMaxDays(FilecoinEpochCalculator.TERM_MIN_IN_DAYS - 1);
 
         vm.expectRevert(abi.encodeWithSelector(ErrorLib.InvalidDataCapTermMaxDays.selector));
         ownerFacet.setDataCapTermMaxDays(FilecoinEpochCalculator.FIVE_YEARS_IN_DAYS + 1);
 
         vm.prank(address(1));
         vm.expectRevert(abi.encodeWithSelector(ErrorLib.CallerIsNotOwner.selector));
-        ownerFacet.setDataCapTermMaxDays(FilecoinEpochCalculator.TERM_MIN);
+        ownerFacet.setDataCapTermMaxDays(FilecoinEpochCalculator.TERM_MIN_IN_DAYS);
     }
 }

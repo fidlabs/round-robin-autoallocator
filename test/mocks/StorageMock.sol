@@ -3,7 +3,7 @@ pragma solidity =0.8.25;
 
 /**
  * @notice vm.etch mocked contract CANNOT change its storage
- * unfotunately, we need to use separate contract to store anything between calls
+ * unfortunately, we need to use separate contract to store anything between calls
  * we might require storage between transfer and getClaims in DataCapApiMock
  */
 contract StorageMock {
