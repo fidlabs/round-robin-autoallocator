@@ -19,7 +19,7 @@ jobs:
           submodules: recursive
 
       - name: Install Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
 
       - name: Install solhint
         run: npm install -g solhint@^5.0.5
