@@ -14,7 +14,7 @@ contract FilecoinFacet is IFacet {
     address private constant _DATACAP_ADDRESS = address(0xfF00000000000000000000000000000000000007);
 
     // get the function selectors for this facet for deployment and update scripts
-    function selectors() external pure returns (bytes4[] memory selectors_) {
+    function selectors() external pure virtual returns (bytes4[] memory selectors_) {
         selectors_ = new bytes4[](1);
         selectors_[0] = this.handle_filecoin_method.selector;
     }

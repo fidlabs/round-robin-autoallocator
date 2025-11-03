@@ -19,7 +19,7 @@ import {Events} from "../libraries/Events.sol";
  */
 contract StorageEntityManagerFacet is IFacet, Modifiers {
     // get the function selectors for this facet for deployment and update scripts
-    function selectors() external pure returns (bytes4[] memory selectors_) {
+    function selectors() external pure virtual returns (bytes4[] memory selectors_) {
         selectors_ = new bytes4[](6);
         selectors_[0] = this.createStorageEntity.selector;
         selectors_[1] = this.addStorageProviders.selector;
